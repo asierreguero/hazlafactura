@@ -1,4 +1,4 @@
-const PRO_CHECKOUT_URL='https://hazlafacturapro.lemonsqueezy.com/checkout/buy/a412031e-fe04-455a-89b8-e2ad1e7e86c0';
+const PRO_CHECKOUT_URL='https://hazlafactura.lemonsqueezy.com/checkout/buy/a412031e-fe04-455a-89b8-e2ad1e7e86c0';
 
 function checkoutNotice(text){
   let notice=document.querySelector('.checkout-notice');
