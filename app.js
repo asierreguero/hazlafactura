@@ -42,7 +42,7 @@ function load(data){if(!data)return;Object.entries(data.values||{}).forEach(([id
 function download(name,content,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
 
 function setProActive(active){
-  state.pro.active=active;$('#proControls').hidden=!active;$('#historyPanel').hidden=!active;$('#proAccessBtn').textContent=active?'Pro activo':'Activar Pro';$('#proStatus').textContent=active?'Licencia activa en este navegador. Tus datos siguen siendo locales.':'Personalización, presupuestos, historial y numeración automática.';
+  state.pro.active=active;$('#proControls').hidden=!active;$('#historyPanel').hidden=!active;$('#proAccessBtn').textContent=active?'Pro activo':'Activar licencia';$('#proStatus').textContent=active?'Licencia activa en este navegador. Tus datos siguen siendo locales.':'Personalización, presupuestos, historial y numeración automática.';
   $('#freeWatermark').hidden=active;
   if(active){syncProInputs();renderHistory()}
 }
