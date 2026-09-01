@@ -1,0 +1,35 @@
+name: Acceso anticipado a Pro
+description: Apúntate para probar Haz la Factura Pro antes del lanzamiento.
+title: "Acceso anticipado Pro"
+labels: ["pro", "interesado"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por tu interés. No publiques información fiscal, facturas ni datos privados en este formulario.
+  - type: dropdown
+    id: perfil
+    attributes:
+      label: ¿Cómo facturas?
+      options:
+        - Autónomo/a
+        - Pequeña empresa
+        - Gestoría o asesoría
+        - Otro
+    validations:
+      required: true
+  - type: checkboxes
+    id: funciones
+    attributes:
+      label: ¿Qué funciones te interesan?
+      options:
+        - label: Logo y colores propios
+        - label: Plantillas adicionales
+        - label: Presupuestos convertibles en factura
+        - label: Historial y numeración automática
+        - label: Códigos QR de pago
+  - type: textarea
+    id: necesidad
+    attributes:
+      label: ¿Qué te haría pagar 19 € por la versión Pro?
+      placeholder: Cuéntanos el resultado que necesitas, sin incluir datos privados.
