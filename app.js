@@ -49,19 +49,20 @@ function setProActive(active){
 function syncProInputs(){if(!state.pro.active)return;$('#documentType').value=state.pro.documentType;$('#template').value=state.pro.template;$('#brandColor').value=state.pro.brandColor}
 async function validateLicense(){
   const key=$('#licenseKey').value.trim(),message=$('#licenseMessage'),button=$('#validateLicenseBtn');if(!key){message.textContent='Introduce una clave de licencia.';return}
-  button.disabled=true;button.textContent='Validando…';message.textContent='';
+  button.disabled=true;button.textContent='Validando…';message.textContent='Conectando con Lemon Squeezy…';
   try{
     const storedKey=localStorage.getItem('hlf-pro-license'),storedInstance=localStorage.getItem('hlf-pro-instance');
     const reusingInstance=storedKey===key&&storedInstance;
     const body=new URLSearchParams({license_key:key});
     if(reusingInstance)body.set('instance_id',storedInstance);else body.set('instance_name',`Haz la Factura · ${navigator.platform||'navegador'}`);
     const action=reusingInstance?'validate':'activate';
-    const response=await fetch(`${LICENSE_API}/${action}`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});const data=await response.json();
+    const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15000);
+    const response=await fetch(`${LICENSE_API}/${action}`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body,signal:controller.signal});clearTimeout(timeout);const data=await response.json();
     const product=String(data.meta?.product_name||'').toLowerCase();
     const accepted=reusingInstance?data.valid:data.activated;
     if(!response.ok||!accepted||!product.includes('haz la factura'))throw new Error(data.error||'La clave no corresponde a Haz la Factura Pro o no se ha podido activar.');
     localStorage.setItem('hlf-pro-license',key);if(data.instance?.id)localStorage.setItem('hlf-pro-instance',data.instance.id);localStorage.setItem('hlf-pro-license-check',String(Date.now()));setProActive(true);$('#licenseDialog').close();update();
-  }catch(error){message.textContent=error.message||'No se pudo validar la licencia. Revisa la conexión e inténtalo de nuevo.'}finally{button.disabled=false;button.textContent='Validar y activar'}
+  }catch(error){message.textContent=error.name==='AbortError'?'La validación está tardando demasiado. Comprueba la conexión y vuelve a intentarlo.':(error.message||'No se pudo validar la licencia. Revisa la conexión e inténtalo de nuevo.')}finally{button.disabled=false;button.textContent='Validar y activar'}
 }
 async function restoreLicense(){
   const key=localStorage.getItem('hlf-pro-license'),instance=localStorage.getItem('hlf-pro-instance');if(!key||!instance)return;
@@ -74,6 +75,6 @@ function saveToHistory(){const list=history(),doc=snapshot(),existing=list.findI
 
 const today=new Date(),due=new Date(Date.now()+30*864e5);$('#invoiceDate').value=today.toISOString().slice(0,10);$('#dueDate').value=due.toISOString().slice(0,10);$('#invoiceNumber').value=nextNumber();
 ids.forEach(id=>$('#'+id).addEventListener('input',update));$('#addItem').onclick=()=>{state.items.push({description:'',quantity:1,price:0});renderItems();update()};$('#printBtn').onclick=()=>window.print();$('#exportBtn').onclick=()=>download(`${state.pro.documentType==='estimate'?'presupuesto':'factura'}-${$('#invoiceNumber').value}.json`,JSON.stringify(snapshot(),null,2),'application/json');$('#importFile').onchange=e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{load(JSON.parse(reader.result))}catch{alert('El archivo no es una copia válida de Haz la Factura.')}};reader.readAsText(file)};$('#clearBtn').onclick=()=>{if(confirm('¿Borrar los datos de la factura guardados en este navegador?')){localStorage.removeItem('hazlafactura');localStorage.removeItem('facturalista');location.reload()}};
-$('#proAccessBtn').onclick=()=>state.pro.active?$('#proControls').scrollIntoView({behavior:'smooth'}):$('#licenseDialog').showModal();$('#validateLicenseBtn').onclick=validateLicense;
+$('#proAccessBtn').onclick=()=>state.pro.active?$('#proControls').scrollIntoView({behavior:'smooth'}):$('#licenseDialog').showModal();$('#validateLicenseBtn').addEventListener('click',validateLicense);$('#licenseDialog form').addEventListener('submit',event=>{if(event.submitter?.classList.contains('dialog-close'))return;event.preventDefault();validateLicense()});
 $('#documentType').onchange=e=>{state.pro.documentType=e.target.value;if($('#autoNumber').checked)$('#invoiceNumber').value=nextNumber(state.pro.documentType);update()};$('#template').onchange=e=>{state.pro.template=e.target.value;update()};$('#brandColor').oninput=e=>{state.pro.brandColor=e.target.value;update()};$('#brandLogo').onchange=e=>{const file=e.target.files[0];if(!file)return;if(file.size>600000){alert('El logo debe ocupar menos de 600 KB.');return}const reader=new FileReader();reader.onload=()=>{state.pro.logo=reader.result;update()};reader.readAsDataURL(file)};$('#saveDocumentBtn').onclick=saveToHistory;$('#convertEstimateBtn').onclick=()=>{state.pro.documentType='invoice';$('#documentType').value='invoice';$('#invoiceNumber').value=nextNumber('invoice');update()};
 const stored=localStorage.getItem('hazlafactura')||localStorage.getItem('facturalista');if(stored){try{load(JSON.parse(stored))}catch{renderItems();update()}}else{renderItems();update()}restoreLicense();
