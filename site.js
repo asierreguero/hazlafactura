@@ -21,3 +21,11 @@ document.querySelectorAll('.site-nav a').forEach((link)=>{
   const linkPath=new URL(link.href,location.href).pathname.replace(/index\.html$/,'');
   if(linkPath===path)link.setAttribute('aria-current','page');
 });
+
+document.querySelectorAll('.site-nav .nav-pro').forEach((link)=>{
+  if(link.querySelector('.nav-pro-price'))return;
+  const price=document.createElement('span');
+  price.className='nav-pro-price';
+  price.innerHTML='19<span class="price-cents">,99</span> €';
+  link.append(price);
+});
