@@ -10,4 +10,4 @@
 
 ## Principios
 
-FacturaLista seguirá funcionando sin cuenta, sin backend obligatorio y sin vender datos. Las funciones básicas permanecerán gratuitas.
+Haz la Factura seguirá funcionando sin cuenta, sin backend obligatorio y sin vender datos. Las funciones básicas permanecerán gratuitas.

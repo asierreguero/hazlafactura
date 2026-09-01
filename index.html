@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="description" content="Crea facturas profesionales gratis, sin registro y sin subir tus datos a ningún servidor. Funciona en tu navegador y también sin conexión.">
   <meta name="theme-color" content="#12251f">
-  <link rel="canonical" href="https://asierreguero.github.io/facturalista/">
-  <meta property="og:title" content="FacturaLista — Facturas gratis, privadas y sin registro">
+  <link rel="canonical" href="https://hazlafactura.es/">
+  <meta property="og:title" content="Haz la Factura — Facturas gratis, privadas y sin registro">
   <meta property="og:description" content="Crea facturas profesionales en el navegador. Sin cuentas, cuotas ni datos en la nube.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://asierreguero.github.io/facturalista/">
-  <title>FacturaLista — Facturas gratis, privadas y sin registro</title>
+  <meta property="og:url" content="https://hazlafactura.es/">
+  <title>Haz la Factura — Facturas gratis, privadas y sin registro</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="#">Factura<span>Lista</span></a>
+    <a class="brand" href="#">Haz la <span>Factura</span></a>
     <nav><a href="#como-funciona">Cómo funciona</a><a href="#preguntas">Preguntas</a><button class="ghost" id="installBtn" hidden>Instalar app</button></nav>
   </header>
 
@@ -30,7 +30,7 @@
         <p class="trust">✓ Gratis &nbsp; ✓ Sin registro &nbsp; ✓ Funciona sin conexión</p>
       </div>
       <div class="hero-card" aria-hidden="true">
-        <div class="mini-head"><b>FACTURA</b><span>FL-2026-001</span></div>
+        <div class="mini-head"><b>FACTURA</b><span>HLF-2026-001</span></div>
         <div class="mini-lines"><i></i><i></i><i></i></div>
         <div class="mini-total"><span>Total</span><strong>1.149,50 €</strong></div>
       </div>
@@ -40,7 +40,7 @@
       <div class="editor">
         <div class="section-title"><div><small>PASO 1</small><h2>Datos de la factura</h2></div><span id="saveState">Guardado localmente</span></div>
         <div class="grid two">
-          <label>Número de factura<input id="invoiceNumber" value="FL-2026-001"></label>
+          <label>Número de factura<input id="invoiceNumber" value="HLF-2026-001"></label>
           <label>Fecha<input id="invoiceDate" type="date"></label>
           <label>Fecha de vencimiento<input id="dueDate" type="date"></label>
           <label>Moneda<select id="currency"><option value="EUR">EUR (€)</option><option value="USD">USD ($)</option><option value="GBP">GBP (£)</option></select></label>
@@ -84,7 +84,7 @@
       <aside class="preview-wrap">
         <p>VISTA PREVIA</p>
         <article class="invoice" id="invoicePreview">
-          <div class="invoice-head"><div><div class="invoice-logo">FL</div><strong id="pIssuerName">TU NEGOCIO</strong></div><div><h2>FACTURA</h2><b id="pInvoiceNumber">FL-2026-001</b><small id="pInvoiceDate"></small></div></div>
+          <div class="invoice-head"><div><div class="invoice-logo">HF</div><strong id="pIssuerName">TU NEGOCIO</strong></div><div><h2>FACTURA</h2><b id="pInvoiceNumber">HLF-2026-001</b><small id="pInvoiceDate"></small></div></div>
           <div class="invoice-parties"><div><small>EMISOR</small><p id="pIssuer"></p></div><div><small>FACTURAR A</small><p id="pClient"></p></div></div>
           <table><thead><tr><th>CONCEPTO</th><th>CANT.</th><th>PRECIO</th><th>TOTAL</th></tr></thead><tbody id="pItems"></tbody></table>
           <div class="totals"><p><span>Subtotal</span><b id="pSubtotal"></b></p><p id="pDiscountRow"><span>Descuento</span><b id="pDiscount"></b></p><p><span id="pVatLabel">IVA (21%)</span><b id="pVat"></b></p><p id="pIrpfRow"><span id="pIrpfLabel">IRPF</span><b id="pIrpf"></b></p><p class="grand"><span>TOTAL</span><strong id="pTotal"></strong></p></div>
@@ -100,13 +100,13 @@
 
     <section class="faq" id="preguntas"><h2>Preguntas frecuentes</h2>
       <details><summary>¿De verdad es gratis?</summary><p>Sí. Puedes crear, guardar e imprimir todas las facturas que quieras sin registrarte.</p></details>
-      <details><summary>¿Dónde se guardan mis datos?</summary><p>En el almacenamiento local de tu navegador. FacturaLista no tiene servidor ni recibe el contenido de tus facturas.</p></details>
+      <details><summary>¿Dónde se guardan mis datos?</summary><p>En el almacenamiento local de tu navegador. Haz la Factura no tiene servidor ni recibe el contenido de tus facturas.</p></details>
       <details><summary>¿Sirve para presentar impuestos?</summary><p>La herramienta calcula importes y genera un documento, pero no sustituye el asesoramiento fiscal ni presenta modelos ante Hacienda.</p></details>
       <details><summary>¿Puedo usarla sin Internet?</summary><p>Sí. Tras la primera visita puedes instalarla como aplicación y seguir usándola sin conexión.</p></details>
     </section>
   </main>
-  <footer><a class="brand" href="#">Factura<span>Lista</span></a><p>Una herramienta privada y sencilla para facturar.</p><p><a href="privacy.html">Privacidad</a> · <a href="https://github.com/asierreguero/facturalista/issues">Contacto</a></p></footer>
+  <footer><a class="brand" href="#">Haz la <span>Factura</span></a><p>Una herramienta privada y sencilla para facturar.</p><p><a href="privacy.html">Privacidad</a> · <a href="https://github.com/asierreguero/hazlafactura/issues">Contacto</a></p></footer>
   <script src="app.js"></script>
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"FacturaLista","url":"https://asierreguero.github.io/facturalista/","applicationCategory":"BusinessApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"description":"Generador de facturas privado, gratuito y sin registro para autónomos."}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Haz la Factura","url":"https://hazlafactura.es/","applicationCategory":"BusinessApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"description":"Generador de facturas privado, gratuito y sin registro para autónomos."}</script>
 </body>
 </html>

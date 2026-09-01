@@ -1,8 +1,8 @@
-# FacturaLista
+# Haz la Factura
 
 Generador de facturas gratuito, privado y sin registro para autónomos. Todo el procesamiento y almacenamiento ocurre en el navegador.
 
-**Aplicación:** https://asierreguero.github.io/facturalista/
+**Aplicación:** https://hazlafactura.es/
 
 ## Funciones
 
