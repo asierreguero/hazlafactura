@@ -1,7 +1,7 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const ids=['invoiceNumber','invoiceDate','dueDate','currency','issuerName','issuerTax','issuerAddress','issuerEmail','clientName','clientTax','clientAddress','clientEmail','vat','irpf','discount','notes'];
 const state={items:[{description:'Servicios profesionales',quantity:1,price:1000}],pro:{active:false,documentType:'invoice',template:'classic',brandColor:'#1f654a',logo:''}};
-const LICENSE_ENDPOINT='https://api.lemonsqueezy.com/v1/licenses/validate';
+const LICENSE_API='https://api.lemonsqueezy.com/v1/licenses';
 
 function escapeHtml(value=''){return String(value).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[c]))}
 function money(value){return new Intl.NumberFormat('es-ES',{style:'currency',currency:$('#currency').value}).format(value||0)}
@@ -51,16 +51,22 @@ async function validateLicense(){
   const key=$('#licenseKey').value.trim(),message=$('#licenseMessage'),button=$('#validateLicenseBtn');if(!key){message.textContent='Introduce una clave de licencia.';return}
   button.disabled=true;button.textContent='Validando…';message.textContent='';
   try{
-    const body=new URLSearchParams({license_key:key});const response=await fetch(LICENSE_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});const data=await response.json();
+    const storedKey=localStorage.getItem('hlf-pro-license'),storedInstance=localStorage.getItem('hlf-pro-instance');
+    const reusingInstance=storedKey===key&&storedInstance;
+    const body=new URLSearchParams({license_key:key});
+    if(reusingInstance)body.set('instance_id',storedInstance);else body.set('instance_name',`Haz la Factura · ${navigator.platform||'navegador'}`);
+    const action=reusingInstance?'validate':'activate';
+    const response=await fetch(`${LICENSE_API}/${action}`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});const data=await response.json();
     const product=String(data.meta?.product_name||'').toLowerCase();
-    if(!response.ok||!data.valid||!product.includes('haz la factura'))throw new Error('La clave no corresponde a Haz la Factura Pro o no está activa.');
-    localStorage.setItem('hlf-pro-license',key);localStorage.setItem('hlf-pro-license-check',String(Date.now()));setProActive(true);$('#licenseDialog').close();update();
+    const accepted=reusingInstance?data.valid:data.activated;
+    if(!response.ok||!accepted||!product.includes('haz la factura'))throw new Error(data.error||'La clave no corresponde a Haz la Factura Pro o no se ha podido activar.');
+    localStorage.setItem('hlf-pro-license',key);if(data.instance?.id)localStorage.setItem('hlf-pro-instance',data.instance.id);localStorage.setItem('hlf-pro-license-check',String(Date.now()));setProActive(true);$('#licenseDialog').close();update();
   }catch(error){message.textContent=error.message||'No se pudo validar la licencia. Revisa la conexión e inténtalo de nuevo.'}finally{button.disabled=false;button.textContent='Validar y activar'}
 }
 async function restoreLicense(){
-  const key=localStorage.getItem('hlf-pro-license');if(!key)return;
+  const key=localStorage.getItem('hlf-pro-license'),instance=localStorage.getItem('hlf-pro-instance');if(!key||!instance)return;
   const last=+localStorage.getItem('hlf-pro-license-check')||0;if(Date.now()-last<7*864e5){setProActive(true);return}
-  try{const body=new URLSearchParams({license_key:key});const response=await fetch(LICENSE_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});const data=await response.json();if(data.valid&&String(data.meta?.product_name||'').toLowerCase().includes('haz la factura')){localStorage.setItem('hlf-pro-license-check',String(Date.now()));setProActive(true)}else{localStorage.removeItem('hlf-pro-license')}}catch{setProActive(true)}
+  try{const body=new URLSearchParams({license_key:key,instance_id:instance});const response=await fetch(`${LICENSE_API}/validate`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});const data=await response.json();if(data.valid&&String(data.meta?.product_name||'').toLowerCase().includes('haz la factura')){localStorage.setItem('hlf-pro-license-check',String(Date.now()));setProActive(true)}else{localStorage.removeItem('hlf-pro-license');localStorage.removeItem('hlf-pro-instance')}}catch{setProActive(true)}
 }
 function history(){try{return JSON.parse(localStorage.getItem('hlf-pro-history'))||[]}catch{return[]}}
 function renderHistory(){const list=history();$('#historyList').innerHTML=list.length?list.map((doc,i)=>`<div class="history-row"><span><strong>${escapeHtml(doc.values.invoiceNumber)}</strong> · ${doc.pro.documentType==='estimate'?'Presupuesto':'Factura'} · ${escapeHtml(doc.values.clientName||'Sin cliente')}</span><button class="secondary" data-load-history="${i}">Abrir</button><button class="danger-text" data-delete-history="${i}">Eliminar</button></div>`).join(''):'<p class="history-empty">Aún no has guardado documentos.</p>';$$('[data-load-history]').forEach(b=>b.onclick=()=>load(history()[+b.dataset.loadHistory]));$$('[data-delete-history]').forEach(b=>b.onclick=()=>{const list=history();list.splice(+b.dataset.deleteHistory,1);localStorage.setItem('hlf-pro-history',JSON.stringify(list));renderHistory()})}
