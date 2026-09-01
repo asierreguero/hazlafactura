@@ -19,14 +19,14 @@ function renderItems(){
   $$('[data-remove]').forEach(el=>el.addEventListener('click',e=>{if(state.items.length>1){state.items.splice(+e.currentTarget.dataset.remove,1);renderItems();update()}}));
 }
 function applyProAppearance(){
-  const invoice=$('#invoicePreview');
+  const invoice=$('#invoicePreview'),active=state.pro.active,template=active?state.pro.template:'classic',brandColor=active?state.pro.brandColor:'#12251f',documentType=active?state.pro.documentType:'invoice',logo=active?state.pro.logo:'';
   invoice.classList.remove('template-classic','template-minimal','template-bold');
-  invoice.classList.add(`template-${state.pro.template}`);
-  invoice.style.setProperty('--brand-color',state.pro.brandColor);
-  $('#pDocumentTitle').textContent=state.pro.documentType==='estimate'?'PRESUPUESTO':'FACTURA';
-  $('#convertEstimateBtn').hidden=state.pro.documentType!=='estimate';
+  invoice.classList.add(`template-${template}`);
+  invoice.style.setProperty('--brand-color',brandColor);
+  $('#pDocumentTitle').textContent=documentType==='estimate'?'PRESUPUESTO':'FACTURA';
+  $('#convertEstimateBtn').hidden=!active||documentType!=='estimate';
   const img=$('#pLogoImage'),fallback=$('#pLogo span');
-  img.hidden=!state.pro.logo;fallback.hidden=!!state.pro.logo;if(state.pro.logo)img.src=state.pro.logo;
+  img.hidden=!logo;fallback.hidden=!!logo;if(logo)img.src=logo;
 }
 function update(){
   const subtotal=state.items.reduce((sum,x)=>sum+x.quantity*x.price,0),discountRate=+$('#discount').value||0,discount=subtotal*discountRate/100,base=subtotal-discount,vatRate=+$('#vat').value,irpfRate=+$('#irpf').value,vat=base*vatRate/100,irpf=base*irpfRate/100,total=base+vat-irpf;
@@ -42,7 +42,7 @@ function load(data){if(!data)return;Object.entries(data.values||{}).forEach(([id
 function download(name,content,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
 
 function setProActive(active){
-  state.pro.active=active;document.body.classList.toggle('pro-active',active);$('#proControls').hidden=!active;$('#historyPanel').hidden=!active;$('#proAccessBtn').textContent=active?'Pro activo':'Activar licencia';$('#proAccessBtn').disabled=active;$('#proStatus').textContent=active?'Licencia activa en este navegador. Tus datos siguen siendo locales.':'Personalización, presupuestos, historial y numeración automática.';
+  state.pro.active=active;document.body.classList.toggle('pro-active',active);$('#proControls').hidden=!active;$('#historyPanel').hidden=!active;$('#releaseLicenseBtn').hidden=!active;$('#proAccessBtn').textContent=active?'Pro activo':'Activar licencia';$('#proAccessBtn').disabled=active;$('#proStatus').textContent=active?'Licencia activa en este navegador. Tus datos siguen siendo locales.':'Personalización, presupuestos, historial y numeración automática.';
   $('#freeWatermark').hidden=active;
   if(active){syncProInputs();renderHistory()}
 }
@@ -69,12 +69,23 @@ async function restoreLicense(){
   const last=+localStorage.getItem('hlf-pro-license-check')||0;if(Date.now()-last<7*864e5){setProActive(true);return}
   try{const body=new URLSearchParams({license_key:key,instance_id:instance});const response=await fetch(`${LICENSE_API}/validate`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});const data=await response.json();if(data.valid&&String(data.meta?.product_name||'').toLowerCase().includes('haz la factura')){localStorage.setItem('hlf-pro-license-check',String(Date.now()));setProActive(true)}else{localStorage.removeItem('hlf-pro-license');localStorage.removeItem('hlf-pro-instance')}}catch{setProActive(true)}
 }
+async function releaseLicense(){
+  if(!confirm('¿Liberar la licencia de este navegador? Tus documentos locales no se borrarán.'))return;
+  const key=localStorage.getItem('hlf-pro-license'),instance=localStorage.getItem('hlf-pro-instance'),button=$('#releaseLicenseBtn');
+  if(!key||!instance){localStorage.removeItem('hlf-pro-license');localStorage.removeItem('hlf-pro-instance');localStorage.removeItem('hlf-pro-license-check');setProActive(false);update();return}
+  button.disabled=true;button.textContent='Liberando…';
+  try{
+    const body=new URLSearchParams({license_key:key,instance_id:instance});const response=await fetch(`${LICENSE_API}/deactivate`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});const data=await response.json();
+    if(!response.ok||!data.deactivated)throw new Error(data.error||'No se pudo liberar la licencia.');
+    localStorage.removeItem('hlf-pro-license');localStorage.removeItem('hlf-pro-instance');localStorage.removeItem('hlf-pro-license-check');setProActive(false);update();alert('Licencia liberada. Ya puedes activarla en otro navegador o dispositivo.');
+  }catch(error){alert(error.message||'No se pudo liberar la licencia. Comprueba la conexión e inténtalo de nuevo.')}finally{button.disabled=false;button.textContent='Liberar licencia'}
+}
 function history(){try{return JSON.parse(localStorage.getItem('hlf-pro-history'))||[]}catch{return[]}}
 function renderHistory(){const list=history();$('#historyList').innerHTML=list.length?list.map((doc,i)=>`<div class="history-row"><span><strong>${escapeHtml(doc.values.invoiceNumber)}</strong> · ${doc.pro.documentType==='estimate'?'Presupuesto':'Factura'} · ${escapeHtml(doc.values.clientName||'Sin cliente')}</span><button class="secondary" data-load-history="${i}">Abrir</button><button class="danger-text" data-delete-history="${i}">Eliminar</button></div>`).join(''):'<p class="history-empty">Aún no has guardado documentos.</p>';$$('[data-load-history]').forEach(b=>b.onclick=()=>load(history()[+b.dataset.loadHistory]));$$('[data-delete-history]').forEach(b=>b.onclick=()=>{const list=history();list.splice(+b.dataset.deleteHistory,1);localStorage.setItem('hlf-pro-history',JSON.stringify(list));renderHistory()})}
 function saveToHistory(){const list=history(),doc=snapshot(),existing=list.findIndex(x=>x.values.invoiceNumber===doc.values.invoiceNumber);if(existing>=0)list[existing]=doc;else list.unshift(doc);localStorage.setItem('hlf-pro-history',JSON.stringify(list.slice(0,100)));if($('#autoNumber').checked&&existing<0){commitNumber(state.pro.documentType);$('#invoiceNumber').value=nextNumber(state.pro.documentType)}renderHistory();update()}
 
 const today=new Date(),due=new Date(Date.now()+30*864e5);$('#invoiceDate').value=today.toISOString().slice(0,10);$('#dueDate').value=due.toISOString().slice(0,10);$('#invoiceNumber').value=nextNumber();
 ids.forEach(id=>$('#'+id).addEventListener('input',update));$('#addItem').onclick=()=>{state.items.push({description:'',quantity:1,price:0});renderItems();update()};$('#printBtn').onclick=()=>window.print();$('#exportBtn').onclick=()=>download(`${state.pro.documentType==='estimate'?'presupuesto':'factura'}-${$('#invoiceNumber').value}.json`,JSON.stringify(snapshot(),null,2),'application/json');$('#importFile').onchange=e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{load(JSON.parse(reader.result))}catch{alert('El archivo no es una copia válida de Haz la Factura.')}};reader.readAsText(file)};$('#clearBtn').onclick=()=>{if(confirm('¿Borrar los datos de la factura guardados en este navegador?')){localStorage.removeItem('hazlafactura');localStorage.removeItem('facturalista');location.reload()}};
-$('#proAccessBtn').onclick=()=>state.pro.active?$('#proControls').scrollIntoView({behavior:'smooth'}):$('#licenseDialog').showModal();$('#validateLicenseBtn').addEventListener('click',validateLicense);$('#licenseDialog form').addEventListener('submit',event=>{if(event.submitter?.classList.contains('dialog-close'))return;event.preventDefault();validateLicense()});
+$('#proAccessBtn').onclick=()=>state.pro.active?$('#proControls').scrollIntoView({behavior:'smooth'}):$('#licenseDialog').showModal();$('#validateLicenseBtn').addEventListener('click',validateLicense);$('#releaseLicenseBtn').addEventListener('click',releaseLicense);$('#licenseDialog form').addEventListener('submit',event=>{if(event.submitter?.classList.contains('dialog-close'))return;event.preventDefault();validateLicense()});
 $('#documentType').onchange=e=>{state.pro.documentType=e.target.value;if($('#autoNumber').checked)$('#invoiceNumber').value=nextNumber(state.pro.documentType);update()};$('#template').onchange=e=>{state.pro.template=e.target.value;update()};$('#brandColor').oninput=e=>{state.pro.brandColor=e.target.value;update()};$('#brandLogo').onchange=e=>{const file=e.target.files[0];if(!file)return;if(file.size>600000){alert('El logo debe ocupar menos de 600 KB.');return}const reader=new FileReader();reader.onload=()=>{state.pro.logo=reader.result;update()};reader.readAsDataURL(file)};$('#saveDocumentBtn').onclick=saveToHistory;$('#convertEstimateBtn').onclick=()=>{state.pro.documentType='invoice';$('#documentType').value='invoice';$('#invoiceNumber').value=nextNumber('invoice');update()};
 const stored=localStorage.getItem('hazlafactura')||localStorage.getItem('facturalista');if(stored){try{load(JSON.parse(stored))}catch{renderItems();update()}}else{renderItems();update()}restoreLicense();
