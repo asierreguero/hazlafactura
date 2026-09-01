@@ -49,6 +49,20 @@
 
     <section class="workspace" id="crear">
       <div class="editor">
+        <section class="pro-tools" aria-labelledby="pro-tools-title">
+          <div class="pro-tools-head"><div><small>PRO</small><h2 id="pro-tools-title">Herramientas profesionales</h2></div><button class="secondary" id="proAccessBtn" type="button">Activar Pro</button></div>
+          <p id="proStatus">Personalización, presupuestos, historial y numeración automática.</p>
+          <div class="pro-controls" id="proControls" hidden>
+            <label>Tipo de documento<select id="documentType"><option value="invoice">Factura</option><option value="estimate">Presupuesto</option></select></label>
+            <label>Plantilla<select id="template"><option value="classic">Clásica</option><option value="minimal">Minimal</option><option value="bold">Destacada</option></select></label>
+            <label>Color de marca<input id="brandColor" type="color" value="#1f654a"></label>
+            <label class="logo-field">Logo de empresa<input id="brandLogo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"></label>
+            <label class="check-field"><input id="autoNumber" type="checkbox" checked> Numeración automática</label>
+            <button class="secondary" id="saveDocumentBtn" type="button">Guardar en historial</button>
+            <button class="secondary" id="convertEstimateBtn" type="button" hidden>Convertir en factura</button>
+          </div>
+          <div class="history" id="historyPanel" hidden><h3>Historial local</h3><div id="historyList"></div></div>
+        </section>
         <div class="section-title"><div><small>PASO 1</small><h2>Datos de la factura</h2></div><span id="saveState">Guardado localmente</span></div>
         <div class="grid two">
           <label>Número de factura<input id="invoiceNumber" value="HLF-2026-001"></label>
@@ -95,7 +109,7 @@
       <aside class="preview-wrap">
         <p>VISTA PREVIA</p>
         <article class="invoice" id="invoicePreview">
-          <div class="invoice-head"><div><div class="invoice-logo">HF</div><strong id="pIssuerName">TU NEGOCIO</strong></div><div><h2>FACTURA</h2><b id="pInvoiceNumber">HLF-2026-001</b><small id="pInvoiceDate"></small></div></div>
+          <div class="invoice-head"><div><div class="invoice-logo" id="pLogo"><span>HF</span><img id="pLogoImage" alt="" hidden></div><strong id="pIssuerName">TU NEGOCIO</strong></div><div><h2 id="pDocumentTitle">FACTURA</h2><b id="pInvoiceNumber">HLF-2026-001</b><small id="pInvoiceDate"></small></div></div>
           <div class="invoice-parties"><div><small>EMISOR</small><p id="pIssuer"></p></div><div><small>FACTURAR A</small><p id="pClient"></p></div></div>
           <table><thead><tr><th>CONCEPTO</th><th>CANT.</th><th>PRECIO</th><th>TOTAL</th></tr></thead><tbody id="pItems"></tbody></table>
           <div class="totals"><p><span>Subtotal</span><b id="pSubtotal"></b></p><p id="pDiscountRow"><span>Descuento</span><b id="pDiscount"></b></p><p><span id="pVatLabel">IVA (21%)</span><b id="pVat"></b></p><p id="pIrpfRow"><span id="pIrpfLabel">IRPF</span><b id="pIrpf"></b></p><p class="grand"><span>TOTAL</span><strong id="pTotal"></strong></p></div>
@@ -120,6 +134,7 @@
   </main>
   <footer class="site-footer"><div class="footer-brand"><a class="brand" href="./">Haz la <span>Factura</span></a><p>Facturas profesionales, privadas y sin complicaciones.</p></div><div><h2>Producto</h2><a href="./#crear">Crear factura</a><a href="pro.html">Haz la Factura Pro</a></div><div><h2>Ayuda</h2><a href="guias/">Guías</a><a href="privacy.html">Privacidad</a><a href="mailto:contacto@hazlafactura.es">contacto@hazlafactura.es</a></div></footer>
   <script src="app.js"></script>
+  <dialog class="license-dialog" id="licenseDialog"><form method="dialog"><button class="dialog-close" value="cancel" aria-label="Cerrar">×</button><p class="eyebrow">HAZ LA FACTURA PRO</p><h2>Activa tu licencia</h2><p>Compra Pro y pega la clave que recibirás por correo. La validación se realiza directamente con Lemon Squeezy.</p><a class="primary" id="buyProLink" href="pro.html">Comprar Pro — 19 €</a><label>Clave de licencia<input id="licenseKey" autocomplete="off" placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"></label><p class="license-error" id="licenseMessage" role="status"></p><button class="secondary" id="validateLicenseBtn" type="button">Validar y activar</button></form></dialog>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Haz la Factura","url":"https://hazlafactura.es/","applicationCategory":"BusinessApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"description":"Generador de facturas privado, gratuito y sin registro para autónomos."}</script>
 <script src="site.js"></script></body>
 </html>
