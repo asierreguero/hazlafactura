@@ -2,6 +2,8 @@
 
 Generador de facturas gratuito, privado y sin registro para autónomos. Todo el procesamiento y almacenamiento ocurre en el navegador.
 
+**Aplicación:** https://asierreguero.github.io/facturalista/
+
 ## Funciones
 
 - Facturas con múltiples conceptos, IVA, IRPF y descuentos.
