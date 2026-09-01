@@ -15,6 +15,7 @@ document.querySelectorAll('.menu-toggle').forEach((button)=>{
 });
 
 const path=location.pathname.replace(/index\.html$/,'');
+if(localStorage.getItem('hlf-pro-license')&&localStorage.getItem('hlf-pro-instance'))document.body.classList.add('pro-active');
 document.querySelectorAll('.site-nav a').forEach((link)=>{
   const href=link.getAttribute('href');
   if(!href||href.startsWith('mailto:')||href.includes('#'))return;
