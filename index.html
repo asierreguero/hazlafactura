@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Crea facturas profesionales gratis, sin registro y sin subir tus datos a ningún servidor. Funciona en tu navegador y también sin conexión.">
+  <meta name="theme-color" content="#12251f">
+  <title>FacturaLista — Facturas gratis, privadas y sin registro</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#">Factura<span>Lista</span></a>
+    <nav><a href="#como-funciona">Cómo funciona</a><a href="#preguntas">Preguntas</a><button class="ghost" id="installBtn" hidden>Instalar app</button></nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Facturación sencilla para autónomos</p>
+        <h1>Tu factura lista.<br><em>Sin cuentas ni cuotas.</em></h1>
+        <p class="lead">Crea, guarda e imprime facturas profesionales desde el navegador. Tus datos nunca salen de tu dispositivo.</p>
+        <a class="primary" href="#crear">Crear una factura</a>
+        <p class="trust">✓ Gratis &nbsp; ✓ Sin registro &nbsp; ✓ Funciona sin conexión</p>
+      </div>
+      <div class="hero-card" aria-hidden="true">
+        <div class="mini-head"><b>FACTURA</b><span>FL-2026-001</span></div>
+        <div class="mini-lines"><i></i><i></i><i></i></div>
+        <div class="mini-total"><span>Total</span><strong>1.149,50 €</strong></div>
+      </div>
+    </section>
+
+    <section class="workspace" id="crear">
+      <div class="editor">
+        <div class="section-title"><div><small>PASO 1</small><h2>Datos de la factura</h2></div><span id="saveState">Guardado localmente</span></div>
+        <div class="grid two">
+          <label>Número de factura<input id="invoiceNumber" value="FL-2026-001"></label>
+          <label>Fecha<input id="invoiceDate" type="date"></label>
+          <label>Fecha de vencimiento<input id="dueDate" type="date"></label>
+          <label>Moneda<select id="currency"><option value="EUR">EUR (€)</option><option value="USD">USD ($)</option><option value="GBP">GBP (£)</option></select></label>
+        </div>
+
+        <div class="split-head"><h3>Tus datos</h3><h3>Datos del cliente</h3></div>
+        <div class="grid two parties">
+          <div>
+            <label>Nombre o razón social<input id="issuerName" placeholder="Tu nombre o empresa"></label>
+            <label>NIF/CIF<input id="issuerTax" placeholder="12345678Z"></label>
+            <label>Dirección<textarea id="issuerAddress" placeholder="Calle, ciudad y código postal"></textarea></label>
+            <label>Email<input id="issuerEmail" type="email" placeholder="tu@email.com"></label>
+          </div>
+          <div>
+            <label>Nombre o razón social<input id="clientName" placeholder="Nombre del cliente"></label>
+            <label>NIF/CIF<input id="clientTax" placeholder="B12345678"></label>
+            <label>Dirección<textarea id="clientAddress" placeholder="Calle, ciudad y código postal"></textarea></label>
+            <label>Email<input id="clientEmail" type="email" placeholder="cliente@email.com"></label>
+          </div>
+        </div>
+
+        <h3>Conceptos</h3>
+        <div id="items"></div>
+        <button class="add" id="addItem">+ Añadir concepto</button>
+
+        <div class="grid three tax-row">
+          <label>IVA<select id="vat"><option value="21">21%</option><option value="10">10%</option><option value="4">4%</option><option value="0">0%</option></select></label>
+          <label>Retención IRPF<select id="irpf"><option value="0">Sin retención</option><option value="7">7%</option><option value="15">15%</option><option value="19">19%</option></select></label>
+          <label>Descuento global (%)<input id="discount" type="number" min="0" max="100" step="0.01" value="0"></label>
+        </div>
+
+        <label>Notas y condiciones<textarea id="notes" placeholder="Forma de pago, cuenta bancaria, condiciones..."></textarea></label>
+        <div class="actions">
+          <button class="primary" id="printBtn">Imprimir / Guardar PDF</button>
+          <button class="secondary" id="exportBtn">Exportar copia</button>
+          <label class="secondary file-label">Importar copia<input type="file" id="importFile" accept="application/json" hidden></label>
+          <button class="danger-text" id="clearBtn">Borrar datos</button>
+        </div>
+      </div>
+
+      <aside class="preview-wrap">
+        <p>VISTA PREVIA</p>
+        <article class="invoice" id="invoicePreview">
+          <div class="invoice-head"><div><div class="invoice-logo">FL</div><strong id="pIssuerName">TU NEGOCIO</strong></div><div><h2>FACTURA</h2><b id="pInvoiceNumber">FL-2026-001</b><small id="pInvoiceDate"></small></div></div>
+          <div class="invoice-parties"><div><small>EMISOR</small><p id="pIssuer"></p></div><div><small>FACTURAR A</small><p id="pClient"></p></div></div>
+          <table><thead><tr><th>CONCEPTO</th><th>CANT.</th><th>PRECIO</th><th>TOTAL</th></tr></thead><tbody id="pItems"></tbody></table>
+          <div class="totals"><p><span>Subtotal</span><b id="pSubtotal"></b></p><p id="pDiscountRow"><span>Descuento</span><b id="pDiscount"></b></p><p><span id="pVatLabel">IVA (21%)</span><b id="pVat"></b></p><p id="pIrpfRow"><span id="pIrpfLabel">IRPF</span><b id="pIrpf"></b></p><p class="grand"><span>TOTAL</span><strong id="pTotal"></strong></p></div>
+          <div class="invoice-notes"><small>NOTAS</small><p id="pNotes">Gracias por tu confianza.</p></div>
+        </article>
+      </aside>
+    </section>
+
+    <section class="features" id="como-funciona">
+      <p class="eyebrow">HECHO PARA NO COMPLICARTE</p><h2>Facturar no debería ser otro trabajo</h2>
+      <div class="feature-grid"><article><b>01</b><h3>Rellena</h3><p>Introduce tus datos una vez. Se guardan solo en tu navegador.</p></article><article><b>02</b><h3>Comprueba</h3><p>IVA, IRPF, descuentos y totales se calculan automáticamente.</p></article><article><b>03</b><h3>Descarga</h3><p>Imprime o guarda el PDF y conserva una copia editable.</p></article></div>
+    </section>
+
+    <section class="faq" id="preguntas"><h2>Preguntas frecuentes</h2>
+      <details><summary>¿De verdad es gratis?</summary><p>Sí. Puedes crear, guardar e imprimir todas las facturas que quieras sin registrarte.</p></details>
+      <details><summary>¿Dónde se guardan mis datos?</summary><p>En el almacenamiento local de tu navegador. FacturaLista no tiene servidor ni recibe el contenido de tus facturas.</p></details>
+      <details><summary>¿Sirve para presentar impuestos?</summary><p>La herramienta calcula importes y genera un documento, pero no sustituye el asesoramiento fiscal ni presenta modelos ante Hacienda.</p></details>
+      <details><summary>¿Puedo usarla sin Internet?</summary><p>Sí. Tras la primera visita puedes instalarla como aplicación y seguir usándola sin conexión.</p></details>
+    </section>
+  </main>
+  <footer><a class="brand" href="#">Factura<span>Lista</span></a><p>Una herramienta privada y sencilla para facturar.</p><p><a href="privacy.html">Privacidad</a> · <a href="mailto:facturalista@proton.me">Contacto</a></p></footer>
+  <script src="app.js"></script>
+</body>
+</html>
