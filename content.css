@@ -238,23 +238,14 @@
   font-size: 14px;
   color: #47554f;
 }
-.comparison-options {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px;
+.comparison-table th:first-child { border-right: 1px solid #d5d0c6; }
+.comparison-list {
+  width: max-content;
+  margin: 0 auto;
+  padding-left: 18px;
+  text-align: left;
 }
-.comparison-option {
-  display: inline-block;
-  padding: 5px 8px;
-  border: 1px solid #c9d8cf;
-  border-radius: 999px;
-  background: #fff;
-  color: var(--ink);
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1;
-}
+.comparison-list li { margin: 4px 0; }
 .comparison-table .pro-column {
   background: #f0f7f2;
 }
