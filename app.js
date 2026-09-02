@@ -1505,6 +1505,15 @@ async function initializeApp() {
     proCard.insertAdjacentElement("afterend", integrated);
     if (toolbar) proCard.insertAdjacentElement("beforebegin", toolbar);
   }
+  const workspace = $("#crear");
+  const archiveDrawer = $("#archiveDrawer");
+  if (workspace && proCard && archiveDrawer && !$("#workspaceTools")) {
+    const tools = document.createElement("div");
+    tools.id = "workspaceTools";
+    tools.className = "workspace-tools";
+    tools.append(proCard, archiveDrawer);
+    workspace.insertAdjacentElement("beforebegin", tools);
+  }
   try {
     await initializeLocalDatabase();
   } catch (error) {

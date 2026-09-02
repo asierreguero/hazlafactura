@@ -156,6 +156,22 @@ body {
   border-radius: var(--radius);
   background: var(--soft);
 }
+.workspace-tools {
+  display: grid;
+  gap: 14px;
+  padding: 34px max(5vw, 28px);
+  border-top: 1px solid var(--line);
+  background: var(--cream);
+}
+.workspace-tools > .pro-tools,
+.workspace-tools > .archive-drawer {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+.workspace-tools > .pro-tools {
+  background: var(--soft);
+}
 .pro-tools-head {
   display: flex;
   align-items: center;
@@ -739,6 +755,7 @@ summary:focus-visible {
   }
 }
 @media (max-width: 600px) {
+  .workspace-tools { padding: 24px 18px; }
   .document-toolbar { grid-template-columns: auto 1fr auto; gap: 10px; }
   .document-type-control { min-width: 0; }
   .document-type-control select { padding: 10px 28px 10px 9px; font-size: 13px; }
