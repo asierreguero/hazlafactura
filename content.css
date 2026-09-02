@@ -335,6 +335,14 @@
   color: var(--muted);
   font-size: 13px;
 }
+main a:not(.primary):not(.secondary) {
+  color: #1f644b;
+  transition: color .16s ease;
+}
+main a:not(.primary):not(.secondary):hover,
+main a:not(.primary):not(.secondary):focus-visible {
+  color: #13251f;
+}
 .sources,
 .related-guides {
   margin-top: 56px;
