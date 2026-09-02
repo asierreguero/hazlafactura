@@ -10,6 +10,7 @@ const COMPANY_PROFILE_KEY = "hlf-pro-company-profile";
 let historyCache = [];
 let databasePromise;
 let databaseAvailable = true;
+let historySort = { field: "number", direction: "asc" };
 const VALUE_IDS = [
   "invoiceNumber",
   "invoiceDate",
@@ -953,7 +954,7 @@ function moneyFor(doc, value) {
     return `${value.toFixed(2)} ${doc.values.currency || "EUR"}`;
   }
 }
-function renderHistory() {
+function renderHistoryLegacy() {
   let list = getHistory(),
     query = $("#historySearch")?.value.toLowerCase() || "",
     type = $("#historyTypeFilter")?.value || "",
@@ -1013,6 +1014,113 @@ function renderHistory() {
       }),
   );
 }
+function renderHistory() {
+  let list = getHistory(),
+    query = $("#historySearch")?.value.toLowerCase() || "",
+    type = $("#historyTypeFilter")?.value || "",
+    status = $("#historyStatusFilter")?.value || "";
+  list = list.filter(
+    (doc) =>
+      (!query ||
+        `${doc.values.invoiceNumber} ${doc.values.clientName}`
+          .toLowerCase()
+          .includes(query)) &&
+      (!type || doc.pro.documentType === type) &&
+      (!status || effectiveStatus(doc) === status),
+  );
+  const historyValues = {
+    number: (doc) => doc.values.invoiceNumber || "",
+    type: (doc) => TYPE_LABELS[doc.pro.documentType] || "Factura",
+    status: (doc) => STATUS_LABELS[effectiveStatus(doc)] || "",
+    client: (doc) => doc.values.clientName || "",
+  };
+  list.sort((a, b) => {
+    const comparison = historyValues[historySort.field](a).localeCompare(
+      historyValues[historySort.field](b),
+      "es",
+      { numeric: true, sensitivity: "base" },
+    );
+    return historySort.direction === "asc" ? comparison : -comparison;
+  });
+  const sortHeading = (field, label) => {
+    const active = historySort.field === field,
+      arrow = active ? (historySort.direction === "asc" ? " ↑" : " ↓") : "";
+    return `<button type="button" data-history-sort="${field}" aria-label="Ordenar por ${label}" aria-pressed="${active}">${label}${arrow}</button>`;
+  };
+  $("#historyList").innerHTML = list.length
+    ? `<div class="history-table-wrap"><table class="history-table"><thead><tr><th>${sortHeading("number", "Número")}</th><th>${sortHeading("type", "Tipo")}</th><th>${sortHeading("status", "Estado")}</th><th>${sortHeading("client", "Cliente")}</th><th>Editar</th><th>Convertir</th><th>Eliminar</th></tr></thead><tbody>${list
+        .map((doc) => {
+          const id = escapeHtml(doc.meta.id),
+            statusValue = effectiveStatus(doc),
+            statusOptions = Object.entries(STATUS_LABELS)
+              .map(
+                ([value, label]) =>
+                  `<option value="${value}"${value === statusValue ? " selected" : ""}>${label}</option>`,
+              )
+              .join("");
+          return `<tr><td><strong>${escapeHtml(doc.values.invoiceNumber || "Sin número")}</strong></td><td>${escapeHtml(TYPE_LABELS[doc.pro.documentType] || "Factura")}</td><td><select class="history-status" data-history-status="${id}" aria-label="Estado de ${escapeHtml(doc.values.invoiceNumber || "documento")}">${statusOptions}</select></td><td>${escapeHtml(doc.values.clientName || "Sin cliente")}</td><td><button class="secondary compact" data-load-history-id="${id}">Editar</button></td><td>${doc.pro.documentType === "estimate" ? `<button class="secondary compact" data-convert-history="${id}">Convertir en factura</button>` : ""}</td><td><button class="danger-text compact" data-delete-history-id="${id}">Eliminar</button></td></tr>`;
+        })
+        .join("")}</tbody></table></div>`
+    : '<p class="history-empty">No hay documentos que coincidan.</p>';
+  $$('[data-history-sort]').forEach((button) => {
+    button.onclick = () => {
+      const field = button.dataset.historySort;
+      historySort = {
+        field,
+        direction:
+          historySort.field === field && historySort.direction === "asc"
+            ? "desc"
+            : "asc",
+      };
+      renderHistory();
+    };
+  });
+  $$('[data-load-history-id]').forEach((button) => {
+    button.onclick = () =>
+      load(
+        getHistory().find(
+          (doc) => doc.meta.id === button.dataset.loadHistoryId,
+        ),
+      );
+  });
+  $$('[data-delete-history-id]').forEach((button) => {
+    button.onclick = () => {
+      const documents = getHistory(),
+        index = documents.findIndex(
+          (doc) => doc.meta.id === button.dataset.deleteHistoryId,
+        );
+      if (index < 0) return;
+      documents.splice(index, 1);
+      setHistory(documents);
+      renderHistory();
+    };
+  });
+  $$('[data-history-status]').forEach((select) => {
+    select.onchange = () => {
+      const documents = getHistory(),
+        doc = documents.find(
+          (item) => item.meta.id === select.dataset.historyStatus,
+        );
+      if (!doc) return;
+      doc.values.documentStatus = select.value;
+      doc.meta.updatedAt = new Date().toISOString();
+      if (state.meta.id === doc.meta.id) $("#documentStatus").value = select.value;
+      setHistory(documents);
+      renderHistory();
+    };
+  });
+  $$('[data-convert-history]').forEach((button) => {
+    button.onclick = () => {
+      const doc = getHistory().find(
+        (item) => item.meta.id === button.dataset.convertHistory,
+      );
+      if (!doc) return;
+      load(doc);
+      convertEstimate();
+    };
+  });
+}
+
 function saveToHistory(options = {}) {
   const list = getHistory(),
     doc = snapshot(false),
@@ -1029,8 +1137,9 @@ function saveToHistory(options = {}) {
   )
     return false;
   if (options.issue) {
-    doc.values.documentStatus = "issued";
-    $("#documentStatus").value = "issued";
+    const selectedStatus = options.status || "issued";
+    doc.values.documentStatus = selectedStatus;
+    $("#documentStatus").value = selectedStatus;
     doc.meta.fingerprint = hash(
       JSON.stringify({ values: doc.values, items: doc.items }),
     );
@@ -1304,11 +1413,22 @@ function requestPrint() {
   $("#validationResults").innerHTML =
     `${result.errors.length ? `<div class="validation-errors"><h3>Debes revisar</h3><ul>${result.errors.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>` : '<p class="validation-ok">No se han detectado campos obligatorios ausentes.</p>'}${result.warnings.length ? `<div class="validation-warnings"><h3>Advertencias</h3><ul>${result.warnings.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>` : ""}`;
   $("#confirmPrintBtn").disabled = result.errors.length > 0;
+  $("#printStatusField").hidden = !state.pro.active;
+  $("#printStatus").value = $("#documentStatus").value || "draft";
   $("#validationDialog").showModal();
-  if (!result.errors.length && !result.warnings.length) confirmPrint();
+  if (!state.pro.active && !result.errors.length && !result.warnings.length)
+    confirmPrint();
 }
 function confirmPrint() {
-  if (state.pro.active) saveToHistory({ issue: true, advanceNumber: true });
+  if (
+    state.pro.active &&
+    saveToHistory({
+      issue: true,
+      status: $("#printStatus").value,
+      advanceNumber: true,
+    }) === false
+  )
+    return;
   $("#validationDialog").close();
   window.print();
 }

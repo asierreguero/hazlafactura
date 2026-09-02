@@ -46,7 +46,7 @@
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="content.css" />
     <link rel="stylesheet" href="layout.css" />
-    <link rel="stylesheet" href="design.css?v=20260903-document-details" />
+    <link rel="stylesheet" href="design.css?v=20260903-archive-table" />
   </head>
   <body>
     <a class="skip-link" href="#main-content">Saltar al contenido</a>
@@ -362,6 +362,8 @@
                   <option value="paid">Cobrado</option>
                   <option value="overdue">Vencido</option>
                   <option value="cancelled">Anulado</option>
+                  <option value="rectified">Rectificado</option>
+                  <option value="rejected">Rechazado</option>
                 </select>
               </div>
               <p class="backup-reminder" id="backupReminder" hidden>
@@ -915,21 +917,35 @@
           ×
         </button>
         <p class="eyebrow">REVISIÓN DEL DOCUMENTO</p>
-        <h2>Comprueba antes de emitir</h2>
+        <h2>Revisa y elige el estado</h2>
         <div id="validationResults"></div>
+        <label class="print-status-field" id="printStatusField" hidden
+          >Guardar el documento como
+          <select id="printStatus">
+            <option value="draft">Borrador</option>
+            <option value="issued">Emitido</option>
+            <option value="sent">Enviado</option>
+            <option value="accepted">Aceptado</option>
+            <option value="paid">Cobrado</option>
+            <option value="overdue">Vencido</option>
+            <option value="cancelled">Anulado</option>
+            <option value="rectified">Rectificado</option>
+            <option value="rejected">Rechazado</option>
+          </select>
+        </label>
         <div class="validation-actions">
           <button class="secondary" value="cancel">Volver y corregir</button
           ><button class="secondary" id="saveDraftBtn" type="button">
             Guardar borrador
           </button
           ><button class="primary" id="confirmPrintBtn" type="button">
-            Imprimir de todos modos
+            Guardar e imprimir
           </button>
         </div>
       </form>
     </dialog>
     <script src="translations.js?v=20260902-estimate-layout"></script>
-    <script src="app.js?v=20260903-document-details"></script>
+    <script src="app.js?v=20260903-archive-table"></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",

@@ -1313,6 +1313,71 @@ summary:focus-visible {
   margin-top: 4px;
   color: var(--muted);
 }
+.history-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(18, 37, 31, 0.12);
+  border-radius: 10px;
+}
+.history-table {
+  width: 100%;
+  min-width: 850px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.history-table th,
+.history-table td {
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(18, 37, 31, 0.1);
+}
+.history-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.history-table th {
+  background: var(--soft);
+  white-space: nowrap;
+}
+.history-table th button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.history-table td:nth-child(1),
+.history-table td:nth-child(2),
+.history-table td:nth-child(5),
+.history-table td:nth-child(6),
+.history-table td:nth-child(7) {
+  white-space: nowrap;
+}
+.history-status {
+  min-width: 112px;
+  margin: 0;
+  padding: 7px 28px 7px 8px;
+  font-size: 12px;
+}
+.print-status-field {
+  display: grid;
+  grid-template-columns: 1fr minmax(150px, 220px);
+  gap: 16px;
+  align-items: center;
+  margin-top: 20px;
+  padding: 14px;
+  background: var(--soft);
+  border-radius: 10px;
+  font-weight: 800;
+}
+.print-status-field select {
+  margin: 0;
+}
+.print-status-field[hidden] {
+  display: none;
+}
 .backup-reminder {
   padding: 10px;
   background: #fff4cf;
