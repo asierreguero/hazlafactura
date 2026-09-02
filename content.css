@@ -239,13 +239,6 @@
   color: #47554f;
 }
 .comparison-table th:first-child { border-right: 1px solid #d5d0c6; }
-.comparison-list {
-  width: max-content;
-  margin: 0 auto;
-  padding-left: 18px;
-  text-align: left;
-}
-.comparison-list li { margin: 4px 0; }
 .comparison-table .pro-column {
   background: #f0f7f2;
 }
