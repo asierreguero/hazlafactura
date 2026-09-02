@@ -490,8 +490,8 @@ function updateDocumentFields() {
   $("#estimateFields").hidden = !isEstimate;
   document.body.classList.toggle("simplified-document", type === "simplified");
   $("#documentDataTitle").textContent = isEstimate
-    ? "Datos del presupuesto"
-    : TYPE_LABELS[type];
+    ? "Cabecera del presupuesto"
+    : `Cabecera de ${TYPE_LABELS[type].toLowerCase()}`;
   $("#numberFieldLabel").textContent = isEstimate
     ? "Número de presupuesto"
     : `Número de ${TYPE_LABELS[type].toLowerCase()}`;
@@ -682,6 +682,12 @@ function setProActive(active) {
   $("#proControls").hidden = !active;
   $("#proDocumentFields").hidden = !active;
   $("#historyPanel").hidden = !active;
+  if ($("#archiveDrawer")) $("#archiveDrawer").hidden = !active;
+  if ($("#integratedProTools")) $("#integratedProTools").hidden = !active;
+  $("#documentToolbar").hidden = !active;
+  $("#documentTypeControl").hidden = !active;
+  $("#saveDocumentBtn").hidden = !active;
+  $("#newDocumentBtn").hidden = !active;
   $("#releaseLicenseBtn").hidden = !active;
   $("#proAccessBtn").textContent = active ? "Pro activo" : "Activar licencia";
   $("#proAccessBtn").disabled = active;
@@ -1474,6 +1480,31 @@ $("#restoreAllFile").onchange = (event) => {
 };
 
 async function initializeApp() {
+  const historyPanel = $("#historyPanel");
+  const editor = document.querySelector("#crear .editor");
+  const toolbar = $("#documentToolbar");
+  const proCard = document.querySelector(".pro-tools");
+  const proControls = $("#proControls");
+  const proFields = $("#proDocumentFields");
+  if (historyPanel && editor && !$("#archiveDrawer")) {
+    const drawer = document.createElement("details");
+    drawer.id = "archiveDrawer";
+    drawer.className = "archive-drawer";
+    drawer.hidden = true;
+    drawer.innerHTML = '<summary><span><small>ARCHIVO LOCAL</small><strong>Facturas y presupuestos guardados</strong></span><span class="drawer-action">Abrir archivo</span></summary>';
+    drawer.append(historyPanel);
+    editor.prepend(drawer);
+  }
+  if (proControls && proFields && proCard && !$("#integratedProTools")) {
+    const integrated = document.createElement("section");
+    integrated.id = "integratedProTools";
+    integrated.className = "integrated-pro-tools";
+    integrated.hidden = true;
+    integrated.innerHTML = '<div class="form-section-heading"><small>AJUSTES DEL DOCUMENTO</small><h3>Diseño y gestión</h3></div>';
+    integrated.append(proControls, proFields);
+    proCard.insertAdjacentElement("afterend", integrated);
+    if (toolbar) proCard.insertAdjacentElement("beforebegin", toolbar);
+  }
   try {
     await initializeLocalDatabase();
   } catch (error) {

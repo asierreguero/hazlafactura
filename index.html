@@ -46,7 +46,7 @@
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="content.css" />
     <link rel="stylesheet" href="layout.css" />
-    <link rel="stylesheet" href="design.css?v=20260902-indexeddb" />
+    <link rel="stylesheet" href="design.css?v=20260902-pro-rework" />
   </head>
   <body>
     <a class="skip-link" href="#main-content">Saltar al contenido</a>
@@ -117,6 +117,19 @@
 
       <section class="workspace" id="crear">
         <div class="editor">
+          <div class="document-toolbar" id="documentToolbar" hidden>
+            <button class="toolbar-action" id="newDocumentBtn" type="button" hidden>+ Nuevo</button>
+            <label class="document-type-control" id="documentTypeControl" hidden>
+              <span>Crear</span>
+              <select id="documentType">
+                <option value="invoice">Factura completa</option>
+                <option value="estimate">Presupuesto</option>
+                <option value="simplified">Factura simplificada</option>
+                <option value="corrective">Factura rectificativa</option>
+              </select>
+            </label>
+            <button class="toolbar-action" id="saveDocumentBtn" type="button" hidden>Guardar</button>
+          </div>
           <section class="pro-tools" aria-labelledby="pro-tools-title">
             <div class="pro-tools-head">
               <div>
@@ -142,14 +155,6 @@
               </button>
             </div>
             <div class="pro-controls" id="proControls" hidden>
-              <label
-                >Tipo de documento<select id="documentType">
-                  <option value="invoice">Factura completa</option>
-                  <option value="estimate">Presupuesto</option>
-                  <option value="simplified">Factura simplificada</option>
-                  <option value="corrective">Factura rectificativa</option>
-                </select></label
-              >
               <label
                 >Plantilla<select id="template">
                   <option value="classic">Clásica</option>
@@ -229,12 +234,6 @@
                 ><input id="autoNumber" type="checkbox" checked /> Numeración
                 automática</label
               >
-              <button class="secondary" id="saveDocumentBtn" type="button">
-                Guardar en historial
-              </button>
-              <button class="secondary" id="newDocumentBtn" type="button">
-                Nuevo documento
-              </button>
               <button
                 class="secondary"
                 id="convertEstimateBtn"
@@ -382,8 +381,8 @@
           </section>
           <div class="section-title">
             <div>
-              <small>PASO 1</small>
-              <h2 id="documentDataTitle">Datos de la factura</h2>
+              <small>DOCUMENTO</small>
+              <h2 id="documentDataTitle">Cabecera de la factura</h2>
             </div>
             <span id="saveState">Guardado localmente</span>
           </div>
@@ -436,6 +435,7 @@
             >
           </div>
 
+          <div class="form-section-heading"><small>EMISOR Y DESTINATARIO</small><h3>Quién emite y quién recibe</h3></div>
           <div class="split-head">
             <h3>Tus datos</h3>
             <h3>Datos del cliente</h3>
@@ -487,10 +487,11 @@
             </div>
           </div>
 
-          <h3>Conceptos</h3>
+          <div class="form-section-heading"><small>DETALLE</small><h3>Conceptos facturados</h3></div>
           <div id="items"></div>
           <button class="add" id="addItem">+ Añadir concepto</button>
 
+          <div class="form-section-heading"><small>IMPUESTOS</small><h3>Tratamiento fiscal</h3></div>
           <div class="tax-settings">
             <div class="grid three tax-row">
               <label
@@ -559,6 +560,7 @@
             </p>
           </div>
 
+          <div class="form-section-heading"><small>CIERRE</small><h3>Notas y condiciones</h3></div>
           <label
             ><span id="notesFieldLabel">Notas y condiciones de pago</span
             ><textarea
@@ -896,7 +898,7 @@
       </form>
     </dialog>
     <script src="translations.js?v=20260902-estimate-layout"></script>
-    <script src="app.js?v=20260902-indexeddb"></script>
+    <script src="app.js?v=20260902-pro-rework"></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
