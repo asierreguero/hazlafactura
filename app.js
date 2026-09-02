@@ -136,6 +136,7 @@ const state = {
     invoiceLanguage: "es",
     brandColor: "#1f654a",
     logo: "",
+    includeSimplifiedRecipient: false,
   },
   meta: {
     id: uid(),
@@ -485,10 +486,30 @@ function applyProAppearance() {
 function updateDocumentFields() {
   const type = currentType(),
     isEstimate = type === "estimate",
-    isCorrective = type === "corrective";
+    isCorrective = type === "corrective",
+    isSimplified = type === "simplified",
+    includesRecipient = isSimplified && state.pro.includeSimplifiedRecipient;
   $("#correctiveFields").hidden = !isCorrective;
   $("#estimateFields").hidden = !isEstimate;
-  document.body.classList.toggle("simplified-document", type === "simplified");
+  document.body.classList.toggle("simplified-document", isSimplified);
+  $("#simplifiedRecipientControl").hidden = !isSimplified;
+  $("#simplifiedLimit").hidden = !isSimplified;
+  $("#dueDateField").hidden = isSimplified;
+  $("#clientSectionTitle").hidden = isSimplified && !includesRecipient;
+  $("#clientFields").hidden = isSimplified && !includesRecipient;
+  $("#pClientParty").hidden = isSimplified && !includesRecipient;
+  $("#partiesHead").classList.toggle(
+    "single-party",
+    isSimplified && !includesRecipient,
+  );
+  $("#includeSimplifiedRecipient").checked =
+    state.pro.includeSimplifiedRecipient;
+  $("#partiesEyebrow").textContent = isSimplified
+    ? "DATOS DEL EMISOR"
+    : "EMISOR Y DESTINATARIO";
+  $("#partiesTitle").textContent = isSimplified
+    ? "Quién emite el documento"
+    : "Quién emite y quién recibe";
   $("#documentDataTitle").textContent = isEstimate
     ? "Cabecera del presupuesto"
     : `Cabecera de ${TYPE_LABELS[type].toLowerCase()}`;
@@ -528,7 +549,7 @@ function update() {
   $("#pIssuerName").textContent = $("#issuerName").value || text[17];
   $("#pInvoiceNumber").textContent = $("#invoiceNumber").value;
   $("#pInvoiceDate").textContent =
-    `${text[2]}: ${formatDate($("#invoiceDate").value)}${$("#dueDate").value ? ` · ${isEstimate ? estimateLabels[0] : text[3]}: ${formatDate($("#dueDate").value)}` : ""}`;
+    `${text[2]}: ${formatDate($("#invoiceDate").value)}${type !== "simplified" && $("#dueDate").value ? ` · ${isEstimate ? estimateLabels[0] : text[3]}: ${formatDate($("#dueDate").value)}` : ""}`;
   $("#pIssuer").textContent = party("issuer") || text[18];
   $("#pClient").textContent = party("client") || text[19];
   $("#pItems").innerHTML = totals.lines
@@ -611,6 +632,7 @@ function snapshot(includeAssets = true) {
       template: state.pro.template,
       invoiceLanguage: state.pro.invoiceLanguage,
       brandColor: state.pro.brandColor,
+      includeSimplifiedRecipient: state.pro.includeSimplifiedRecipient,
       ...(includeAssets && state.pro.logo ? { logo: state.pro.logo } : {}),
     },
     meta: { ...state.meta },
@@ -1175,7 +1197,7 @@ function validateDocument() {
     errors.push("Falta la identificación fiscal del emisor.");
   if (!$("#issuerAddress").value.trim())
     errors.push("Falta la dirección del emisor.");
-  if (type !== "simplified") {
+  if (type !== "simplified" || state.pro.includeSimplifiedRecipient) {
     if (!$("#clientName").value.trim())
       errors.push("Falta el nombre o razón social del cliente.");
     if (!$("#clientTax").value.trim())
@@ -1274,6 +1296,14 @@ function setTreatment(value, force = false) {
 }
 function changeDocumentType(type) {
   state.pro.documentType = type;
+  if (type === "simplified") {
+    state.pro.includeSimplifiedRecipient = false;
+    $("#dueDate").value = "";
+  } else if (!$("#dueDate").value) {
+    $("#dueDate").value = new Date(Date.now() + 30 * 864e5)
+      .toISOString()
+      .slice(0, 10);
+  }
   const prefix = PREFIXES[type];
   $("#seriesPrefix").value = prefix;
   $("#invoiceNumber").value = nextNumber(type);
@@ -1293,9 +1323,10 @@ function convertEstimate() {
   changeDocumentType("invoice");
   const invoiceNumber = $("#invoiceNumber").value;
   $("#relatedDocument").value = estimateNumber;
-  $("#dueDate").value = new Date(Date.now() + 30 * 864e5)
-    .toISOString()
-    .slice(0, 10);
+  $("#dueDate").value =
+    currentType() === "simplified"
+      ? ""
+      : new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10);
   update();
   const list = getHistory(),
     savedEstimate = list.find(
@@ -1333,6 +1364,7 @@ function newDocument() {
     fingerprint: "",
   };
   state.items = [newItem("", 1, 0)];
+  state.pro.includeSimplifiedRecipient = false;
   [
     "clientName",
     "clientTax",
@@ -1417,6 +1449,10 @@ $("#licenseDialog form").addEventListener("submit", (event) => {
   validateLicense();
 });
 $("#documentType").onchange = (event) => changeDocumentType(event.target.value);
+$("#includeSimplifiedRecipient").onchange = (event) => {
+  state.pro.includeSimplifiedRecipient = event.target.checked;
+  update();
+};
 $("#template").onchange = (event) => {
   state.pro.template = event.target.value;
   update();

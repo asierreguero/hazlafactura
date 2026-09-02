@@ -1119,9 +1119,28 @@ summary:focus-visible {
 .payment-summary p {
   margin: 0;
 }
-.simplified-document .parties > div:last-child {
-  opacity: 0.72;
+.simplified-recipient-control {
+  margin: 16px 0;
+  padding: 14px 16px;
+  border-left: 3px solid var(--green);
+  background: var(--soft);
 }
+#clientFields[hidden], #pClientParty[hidden] { display: none; }
+.simplified-recipient-control label { margin: 0; }
+.simplified-recipient-control p,
+.simplified-limit { margin: 8px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.simplified-limit { margin-bottom: 18px; padding: 10px 12px; background: #fff8dc; color: #66531b; }
+.split-head.single-party { grid-template-columns: 1fr; }
+.simplified-document .invoice-parties { margin: 28px 0; }
+.simplified-document .invoice-parties > div:only-child { max-width: 58%; }
+.simplified-document .totals .grand {
+  margin-top: 10px;
+  padding: 14px 0;
+  border-bottom: 2px solid var(--ink);
+  font-size: 18px;
+  font-weight: 900;
+}
+.simplified-document .invoice-notes { margin-top: 26px; }
 .pro-document-fields {
   margin-top: 18px;
   padding-top: 18px;
