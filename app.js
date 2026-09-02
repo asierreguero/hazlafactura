@@ -1,11 +1,14 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const ids=['invoiceNumber','invoiceDate','dueDate','currency','issuerName','issuerTax','issuerAddress','issuerEmail','clientName','clientTax','clientAddress','clientEmail','vat','irpf','discount','notes'];
-const state={items:[{description:'Servicios profesionales',quantity:1,price:1000}],pro:{active:false,documentType:'invoice',template:'classic',brandColor:'#1f654a',logo:''}};
+const state={items:[{description:'Servicios profesionales',quantity:1,price:1000}],pro:{active:false,documentType:'invoice',template:'classic',invoiceLanguage:'es',brandColor:'#1f654a',logo:''}};
 const LICENSE_API='https://api.lemonsqueezy.com/v1/licenses';
+const TRANSLATIONS=window.HLF_TRANSLATIONS||{},RTL_LANGUAGES=new Set(['ar','ur']);
 
 function escapeHtml(value=''){return String(value).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[c]))}
-function money(value){return new Intl.NumberFormat('es-ES',{style:'currency',currency:$('#currency').value}).format(value||0)}
-function formatDate(value){if(!value)return '';return new Intl.DateTimeFormat('es-ES').format(new Date(value+'T12:00:00'))}
+function invoiceLanguage(){return state.pro.active&&TRANSLATIONS[state.pro.invoiceLanguage]?state.pro.invoiceLanguage:'es'}
+function invoiceText(){return TRANSLATIONS[invoiceLanguage()]||TRANSLATIONS.es}
+function money(value){return new Intl.NumberFormat(invoiceLanguage(),{style:'currency',currency:$('#currency').value}).format(value||0)}
+function formatDate(value){if(!value)return '';return new Intl.DateTimeFormat(invoiceLanguage()).format(new Date(value+'T12:00:00'))}
 function party(prefix){return [$('#'+prefix+'Name').value,$('#'+prefix+'Tax').value,$('#'+prefix+'Address').value,$('#'+prefix+'Email').value].filter(Boolean).join('\n')}
 function nextNumber(type='invoice'){
   const year=new Date().getFullYear(),prefix=type==='estimate'?'PRE':'HLF',key=`hlf-sequence-${type}-${year}`;
@@ -19,24 +22,26 @@ function renderItems(){
   $$('[data-remove]').forEach(el=>el.addEventListener('click',e=>{if(state.items.length>1){state.items.splice(+e.currentTarget.dataset.remove,1);renderItems();update()}}));
 }
 function applyProAppearance(){
-  const invoice=$('#invoicePreview'),active=state.pro.active,template=active?state.pro.template:'classic',brandColor=active?state.pro.brandColor:'#12251f',documentType=active?state.pro.documentType:'invoice',logo=active?state.pro.logo:'';
+  const invoice=$('#invoicePreview'),active=state.pro.active,template=active?state.pro.template:'classic',brandColor=active?state.pro.brandColor:'#12251f',documentType=active?state.pro.documentType:'invoice',logo=active?state.pro.logo:'',language=invoiceLanguage(),text=invoiceText();
   invoice.classList.remove('template-classic','template-minimal','template-bold');
   invoice.classList.add(`template-${template}`);
   invoice.style.setProperty('--brand-color',brandColor);
-  $('#pDocumentTitle').textContent=documentType==='estimate'?'PRESUPUESTO':'FACTURA';
+  invoice.lang=language;invoice.dir=RTL_LANGUAGES.has(language)?'rtl':'ltr';
+  $('#pDocumentTitle').textContent=documentType==='estimate'?text[1]:text[0];
   $('#convertEstimateBtn').hidden=!active||documentType!=='estimate';
   const img=$('#pLogoImage'),fallback=$('#pLogo span');
   img.hidden=!logo;fallback.hidden=!!logo;if(logo)img.src=logo;
 }
 function update(){
-  const subtotal=state.items.reduce((sum,x)=>sum+x.quantity*x.price,0),discountRate=+$('#discount').value||0,discount=subtotal*discountRate/100,base=subtotal-discount,vatRate=+$('#vat').value,irpfRate=+$('#irpf').value,vat=base*vatRate/100,irpf=base*irpfRate/100,total=base+vat-irpf;
-  $('#pIssuerName').textContent=$('#issuerName').value||'TU NEGOCIO';$('#pInvoiceNumber').textContent=$('#invoiceNumber').value;$('#pInvoiceDate').textContent=`Fecha: ${formatDate($('#invoiceDate').value)}${$('#dueDate').value?' · Vence: '+formatDate($('#dueDate').value):''}`;
-  $('#pIssuer').textContent=party('issuer')||'Añade tus datos';$('#pClient').textContent=party('client')||'Añade los datos del cliente';
+  const text=invoiceText(),subtotal=state.items.reduce((sum,x)=>sum+x.quantity*x.price,0),discountRate=+$('#discount').value||0,discount=subtotal*discountRate/100,base=subtotal-discount,vatRate=+$('#vat').value||0,irpfRate=+$('#irpf').value||0,vat=base*vatRate/100,irpf=base*irpfRate/100,total=base+vat-irpf;
+  $('#pIssuerLabel').textContent=text[4];$('#pClientLabel').textContent=text[5];$('#pConceptLabel').textContent=text[6];$('#pQuantityLabel').textContent=text[7];$('#pPriceLabel').textContent=text[8];$('#pLineTotalLabel').textContent=text[9];$('#pSubtotalLabel').textContent=text[10];$('#pDiscountLabel').textContent=text[11];$('#pGrandTotalLabel').textContent=text[9];$('#pNotesLabel').textContent=text[14];$('#freeWatermark').textContent=text[16];
+  $('#pIssuerName').textContent=$('#issuerName').value||text[17];$('#pInvoiceNumber').textContent=$('#invoiceNumber').value;$('#pInvoiceDate').textContent=`${text[2]}: ${formatDate($('#invoiceDate').value)}${$('#dueDate').value?' · '+text[3]+': '+formatDate($('#dueDate').value):''}`;
+  $('#pIssuer').textContent=party('issuer')||text[18];$('#pClient').textContent=party('client')||text[19];
   $('#pItems').innerHTML=state.items.map(x=>`<tr><td>${escapeHtml(x.description)||'—'}</td><td>${x.quantity}</td><td>${money(x.price)}</td><td>${money(x.quantity*x.price)}</td></tr>`).join('');
-  $('#pSubtotal').textContent=money(subtotal);$('#pDiscount').textContent='− '+money(discount);$('#pDiscountRow').hidden=!discount;$('#pVatLabel').textContent=`IVA (${vatRate}%)`;$('#pVat').textContent=money(vat);$('#pIrpfLabel').textContent=`IRPF (${irpfRate}%)`;$('#pIrpf').textContent='− '+money(irpf);$('#pIrpfRow').hidden=!irpf;$('#pTotal').textContent=money(total);$('#pNotes').textContent=$('#notes').value||'Gracias por tu confianza.';
+  $('#pSubtotal').textContent=money(subtotal);$('#pDiscount').textContent='− '+money(discount);$('#pDiscountRow').hidden=!discount;$('#pVatLabel').textContent=`${text[12]} (${vatRate}%)`;$('#pVat').textContent=money(vat);$('#pIrpfLabel').textContent=`${text[13]} (${irpfRate}%)`;$('#pIrpf').textContent='− '+money(irpf);$('#pIrpfRow').hidden=!irpf;$('#pTotal').textContent=money(total);$('#pNotes').textContent=$('#notes').value||text[15];
   applyProAppearance();save();
 }
-function snapshot(){const values={};ids.forEach(id=>values[id]=$('#'+id).value);return {version:2,values,items:state.items,pro:{documentType:state.pro.documentType,template:state.pro.template,brandColor:state.pro.brandColor,logo:state.pro.logo}}}
+function snapshot(){const values={};ids.forEach(id=>values[id]=$('#'+id).value);return {version:3,values,items:state.items,pro:{documentType:state.pro.documentType,template:state.pro.template,invoiceLanguage:state.pro.invoiceLanguage,brandColor:state.pro.brandColor,logo:state.pro.logo}}}
 function save(){localStorage.setItem('hazlafactura',JSON.stringify(snapshot()));$('#saveState').textContent='Guardado localmente'}
 function load(data){if(!data)return;Object.entries(data.values||{}).forEach(([id,v])=>{if($('#'+id))$('#'+id).value=v});if(Array.isArray(data.items)&&data.items.length)state.items=data.items;if(data.pro)Object.assign(state.pro,data.pro);syncProInputs();renderItems();update()}
 function download(name,content,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
@@ -46,7 +51,7 @@ function setProActive(active){
   $('#freeWatermark').hidden=active;
   if(active){syncProInputs();renderHistory()}
 }
-function syncProInputs(){if(!state.pro.active)return;$('#documentType').value=state.pro.documentType;$('#template').value=state.pro.template;$('#brandColor').value=state.pro.brandColor}
+function syncProInputs(){if(!state.pro.active)return;$('#documentType').value=state.pro.documentType;$('#template').value=state.pro.template;$('#invoiceLanguage').value=state.pro.invoiceLanguage||'es';$('#brandColor').value=state.pro.brandColor}
 async function validateLicense(){
   const key=$('#licenseKey').value.trim(),message=$('#licenseMessage'),button=$('#validateLicenseBtn');if(!key){message.textContent='Introduce una clave de licencia.';return}
   button.disabled=true;button.textContent='Validando…';message.textContent='Conectando con Lemon Squeezy…';
@@ -87,5 +92,5 @@ function saveToHistory(){const list=history(),doc=snapshot(),existing=list.findI
 const today=new Date(),due=new Date(Date.now()+30*864e5);$('#invoiceDate').value=today.toISOString().slice(0,10);$('#dueDate').value=due.toISOString().slice(0,10);$('#invoiceNumber').value=nextNumber();
 ids.forEach(id=>$('#'+id).addEventListener('input',update));$('#addItem').onclick=()=>{state.items.push({description:'',quantity:1,price:0});renderItems();update()};$('#printBtn').onclick=()=>window.print();$('#exportBtn').onclick=()=>download(`${state.pro.documentType==='estimate'?'presupuesto':'factura'}-${$('#invoiceNumber').value}.json`,JSON.stringify(snapshot(),null,2),'application/json');$('#importFile').onchange=e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{load(JSON.parse(reader.result))}catch{alert('El archivo no es una copia válida de Haz la Factura.')}};reader.readAsText(file)};$('#clearBtn').onclick=()=>{if(confirm('¿Borrar los datos de la factura guardados en este navegador?')){localStorage.removeItem('hazlafactura');localStorage.removeItem('facturalista');location.reload()}};
 $('#proAccessBtn').onclick=()=>state.pro.active?$('#proControls').scrollIntoView({behavior:'smooth'}):$('#licenseDialog').showModal();$('#validateLicenseBtn').addEventListener('click',validateLicense);$('#releaseLicenseBtn').addEventListener('click',releaseLicense);$('#licenseDialog form').addEventListener('submit',event=>{if(event.submitter?.classList.contains('dialog-close'))return;event.preventDefault();validateLicense()});
-$('#documentType').onchange=e=>{state.pro.documentType=e.target.value;if($('#autoNumber').checked)$('#invoiceNumber').value=nextNumber(state.pro.documentType);update()};$('#template').onchange=e=>{state.pro.template=e.target.value;update()};$('#brandColor').oninput=e=>{state.pro.brandColor=e.target.value;update()};$('#brandLogo').onchange=e=>{const file=e.target.files[0];if(!file)return;if(file.size>600000){alert('El logo debe ocupar menos de 600 KB.');return}const reader=new FileReader();reader.onload=()=>{state.pro.logo=reader.result;update()};reader.readAsDataURL(file)};$('#saveDocumentBtn').onclick=saveToHistory;$('#convertEstimateBtn').onclick=()=>{state.pro.documentType='invoice';$('#documentType').value='invoice';$('#invoiceNumber').value=nextNumber('invoice');update()};
+$('#documentType').onchange=e=>{state.pro.documentType=e.target.value;if($('#autoNumber').checked)$('#invoiceNumber').value=nextNumber(state.pro.documentType);update()};$('#template').onchange=e=>{state.pro.template=e.target.value;update()};$('#invoiceLanguage').onchange=e=>{state.pro.invoiceLanguage=e.target.value;update()};$('#brandColor').oninput=e=>{state.pro.brandColor=e.target.value;update()};$('#brandLogo').onchange=e=>{const file=e.target.files[0];if(!file)return;if(file.size>600000){alert('El logo debe ocupar menos de 600 KB.');return}const reader=new FileReader();reader.onload=()=>{state.pro.logo=reader.result;update()};reader.readAsDataURL(file)};$('#saveDocumentBtn').onclick=saveToHistory;$('#convertEstimateBtn').onclick=()=>{state.pro.documentType='invoice';$('#documentType').value='invoice';$('#invoiceNumber').value=nextNumber('invoice');update()};
 const stored=localStorage.getItem('hazlafactura')||localStorage.getItem('facturalista');if(stored){try{load(JSON.parse(stored))}catch{renderItems();update()}}else{renderItems();update()}restoreLicense();
