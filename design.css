@@ -237,6 +237,7 @@ body {
   margin: -10px 0 24px;
 }
 .document-toolbar[hidden] { display: none; }
+.document-toolbar::before { content: ""; }
 .document-type-control {
   margin: 0;
   text-align: center;

@@ -709,7 +709,6 @@ function setProActive(active) {
   $("#documentToolbar").hidden = !active;
   $("#documentTypeControl").hidden = !active;
   $("#saveDocumentBtn").hidden = !active;
-  $("#newDocumentBtn").hidden = !active;
   $("#releaseLicenseBtn").hidden = !active;
   $("#proAccessBtn").textContent = active ? "Pro activo" : "Activar licencia";
   $("#proAccessBtn").disabled = active;
@@ -1343,56 +1342,6 @@ function convertEstimate() {
     `Presupuesto ${estimateNumber} conservado y convertido en una nueva factura.`,
   );
 }
-function newDocument() {
-  if (
-    !confirm(
-      "¿Crear un documento nuevo? El documento actual seguirá en el archivo solo si lo has guardado.",
-    )
-  )
-    return;
-  const issuer = {
-    name: $("#issuerName").value,
-    tax: $("#issuerTax").value,
-    address: $("#issuerAddress").value,
-    country: $("#issuerCountry").value,
-    email: $("#issuerEmail").value,
-  };
-  state.meta = {
-    id: uid(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    fingerprint: "",
-  };
-  state.items = [newItem("", 1, 0)];
-  state.pro.includeSimplifiedRecipient = false;
-  [
-    "clientName",
-    "clientTax",
-    "clientAddress",
-    "clientEmail",
-    "relatedDocument",
-    "originalInvoiceNumber",
-    "originalInvoiceDate",
-    "correctionReason",
-    "paymentDate",
-    "paymentMethod",
-  ].forEach((id) => ($("#" + id).value = ""));
-  $("#clientCountry").value = "España";
-  $("#amountPaid").value = 0;
-  $("#documentStatus").value = "draft";
-  $("#invoiceDate").value = new Date().toISOString().slice(0, 10);
-  $("#dueDate").value = new Date(Date.now() + 30 * 864e5)
-    .toISOString()
-    .slice(0, 10);
-  $("#invoiceNumber").value = nextNumber();
-  Object.entries(issuer).forEach(([key, value]) => {
-    const suffix = key[0].toUpperCase() + key.slice(1);
-    $("#issuer" + suffix).value = value;
-  });
-  renderItems();
-  update();
-}
-
 const today = new Date(),
   due = new Date(Date.now() + 30 * 864e5);
 $("#invoiceDate").value = today.toISOString().slice(0, 10);
@@ -1491,7 +1440,6 @@ $("#saveDocumentBtn").onclick = () => {
   saveToHistory();
   renderHistory();
 };
-$("#newDocumentBtn").onclick = newDocument;
 $("#convertEstimateBtn").onclick = convertEstimate;
 $("#taxTreatment").onchange = (event) => setTreatment(event.target.value, true);
 $("#seriesPrefix").onchange = () => {
