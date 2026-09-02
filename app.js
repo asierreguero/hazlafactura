@@ -869,9 +869,9 @@ function getHistory() {
   return historyCache;
 }
 function setHistory(list) {
-  historyCache = list
-    .slice(0, 100)
-    .sort((a, b) => new Date(b.meta.updatedAt) - new Date(a.meta.updatedAt));
+  historyCache = [...list].sort(
+    (a, b) => new Date(b.meta.updatedAt) - new Date(a.meta.updatedAt),
+  );
   if (!databaseAvailable) {
     localStorage.setItem("hlf-pro-history", JSON.stringify(historyCache));
     return Promise.resolve();
