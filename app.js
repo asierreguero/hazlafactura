@@ -704,7 +704,7 @@ function setProActive(active) {
   document.querySelector(".pro-tools").hidden = !active;
   $("#documentToolbar").hidden = !active;
   $("#documentTypeControl").hidden = !active;
-  $("#saveDocumentBtn").hidden = !active;
+  $("#tutorialBtn").hidden = !active;
   $("#releaseLicenseBtn").hidden = !active;
   $("#proAccessBtn").textContent = active ? "Pro activo" : "Activar licencia";
   $("#proAccessBtn").disabled = active;
@@ -774,6 +774,7 @@ async function validateLicense() {
     setProActive(true);
     $("#licenseDialog").close();
     update();
+    $("#tutorialDialog").showModal();
   } catch (error) {
     message.textContent =
       error.name === "AbortError"
@@ -1494,10 +1495,7 @@ $("#brandLogo").onchange = (event) => {
   };
   reader.readAsDataURL(file);
 };
-$("#saveDocumentBtn").onclick = () => {
-  saveToHistory();
-  renderHistory();
-};
+$("#tutorialBtn").onclick = () => $("#tutorialDialog").showModal();
 $("#convertEstimateBtn").onclick = convertEstimate;
 $("#taxTreatment").onchange = (event) => setTreatment(event.target.value, true);
 $("#seriesPrefix").onchange = () => {

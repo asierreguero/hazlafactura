@@ -46,7 +46,7 @@
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="content.css" />
     <link rel="stylesheet" href="layout.css" />
-    <link rel="stylesheet" href="design.css?v=20260903-document-flow" />
+    <link rel="stylesheet" href="design.css?v=20260903-tutorial" />
   </head>
   <body>
     <a class="skip-link" href="#main-content">Saltar al contenido</a>
@@ -129,7 +129,7 @@
                 <option value="corrective">Factura rectificativa</option>
               </select>
             </label>
-            <button class="toolbar-action" id="saveDocumentBtn" type="button" hidden>Guardar</button>
+            <button class="toolbar-action tutorial-trigger" id="tutorialBtn" type="button" aria-label="Abrir tutorial" hidden>?</button>
           </div>
           <section class="pro-tools" aria-labelledby="pro-tools-title" hidden>
             <div class="pro-tools-head">
@@ -890,6 +890,21 @@
         </button>
       </form>
     </dialog>
+    <dialog class="tutorial-dialog" id="tutorialDialog">
+      <form method="dialog">
+        <button class="dialog-close" value="cancel" aria-label="Cerrar">×</button>
+        <p class="eyebrow">GUÍA RÁPIDA</p>
+        <h2>De cero a documento guardado</h2>
+        <div class="tutorial-steps">
+          <article><span>1</span><b>Elige</b><p>Selecciona factura, simplificada, rectificativa o presupuesto.</p></article>
+          <article><span>2</span><b>Completa</b><p>Abre las secciones y revisa el resultado en la vista previa.</p></article>
+          <article><span>3</span><b>Imprime</b><p>Imprimir o guardar el PDF también archiva el documento.</p></article>
+          <article><span>4</span><b>Continúa</b><p>Ábrelo para editarlo o pulsa «Nuevo» para empezar el siguiente.</p></article>
+        </div>
+        <div class="tutorial-tip"><strong>Tu empresa se recuerda.</strong><span>Al guardar por primera vez, sus datos quedarán listos para los siguientes documentos.</span></div>
+        <button class="primary tutorial-done" value="cancel">Entendido</button>
+      </form>
+    </dialog>
     <dialog class="validation-dialog" id="validationDialog">
       <form method="dialog">
         <button class="dialog-close" value="cancel" aria-label="Cerrar">
@@ -907,7 +922,7 @@
       </form>
     </dialog>
     <script src="translations.js?v=20260902-estimate-layout"></script>
-    <script src="app.js?v=20260903-document-flow"></script>
+    <script src="app.js?v=20260903-tutorial"></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",

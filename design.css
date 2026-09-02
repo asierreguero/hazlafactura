@@ -295,6 +295,25 @@ body {
   cursor: pointer;
 }
 .toolbar-action:last-child { justify-self: end; }
+.tutorial-trigger {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink);
+  font-size: 17px;
+  text-decoration: none;
+}
+.tutorial-trigger:hover {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+  transform: translateY(-1px);
+}
 .form-section-heading {
   margin: 38px 0 14px;
   padding-top: 22px;
@@ -1312,6 +1331,48 @@ summary:focus-visible {
   padding: 0;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
 }
+.tutorial-dialog {
+  width: min(820px, calc(100% - 32px));
+  border: 0;
+  border-radius: 18px;
+  padding: 0;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .3);
+}
+.tutorial-dialog::backdrop { background: rgba(12, 25, 20, .68); }
+.tutorial-dialog form { position: relative; padding: 36px; }
+.tutorial-dialog h2 { margin: 8px 0 26px; font: 36px Georgia, serif; }
+.tutorial-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.tutorial-steps article {
+  min-width: 0;
+  padding: 18px 16px;
+  border-top: 3px solid var(--green);
+  border-radius: 10px;
+  background: var(--soft);
+}
+.tutorial-steps article > span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 900;
+}
+.tutorial-steps b { display: block; font-size: 16px; }
+.tutorial-steps p { margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.tutorial-tip {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 13px 16px;
+  border-radius: 8px;
+  background: #fff6d9;
+  color: #654b12;
+  font-size: 13px;
+}
+.tutorial-done { width: 100%; margin-top: 18px; }
 .validation-dialog::backdrop {
   background: rgba(12, 25, 20, 0.65);
 }
@@ -1363,6 +1424,10 @@ summary:focus-visible {
   }
 }
 @media (max-width: 600px) {
+  .tutorial-dialog form { padding: 30px 20px 20px; }
+  .tutorial-dialog h2 { font-size: 30px; }
+  .tutorial-steps { grid-template-columns: 1fr 1fr; }
+  .tutorial-tip { display: grid; }
   .advanced-item {
     grid-template-columns: repeat(3, 1fr) 32px;
     padding: 12px;
