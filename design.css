@@ -1412,6 +1412,18 @@ summary:focus-visible {
   opacity: 0.45;
   cursor: not-allowed;
 }
+#invoiceNumber[readonly] {
+  background: #f0f3f1;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+.payment-toggle {
+  width: fit-content;
+  margin: 4px 0 14px;
+}
+#paymentFields[hidden] {
+  display: none;
+}
 @media (max-width: 900px) {
   .advanced-item {
     grid-template-columns: minmax(140px, 1.5fr) repeat(3, minmax(60px, 0.7fr));

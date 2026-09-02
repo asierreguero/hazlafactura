@@ -137,6 +137,8 @@ const state = {
     brandColor: "#1f654a",
     logo: "",
     includeSimplifiedRecipient: false,
+    automaticNumber: true,
+    hasPayment: false,
   },
   meta: {
     id: uid(),
@@ -504,6 +506,15 @@ function updateDocumentFields() {
   );
   $("#includeSimplifiedRecipient").checked =
     state.pro.includeSimplifiedRecipient;
+  const automaticNumber = state.pro.active && state.pro.automaticNumber;
+  $("#autoNumber").checked = state.pro.automaticNumber;
+  $("#invoiceNumber").readOnly = automaticNumber;
+  $("#invoiceNumber").setAttribute(
+    "aria-readonly",
+    automaticNumber ? "true" : "false",
+  );
+  $("#hasPayment").checked = state.pro.hasPayment;
+  $("#paymentFields").hidden = !state.pro.hasPayment;
   $("#partiesTitle").textContent = isSimplified
     ? "Datos del emisor"
     : "Emisor y destinatario";
@@ -603,7 +614,7 @@ function update() {
     if (pending) payment.push(`Pendiente: ${money(pending)}.`);
   }
   $("#pPaymentSummary").hidden =
-    !state.pro.active || !payment.length || isEstimate;
+    !state.pro.active || !state.pro.hasPayment || !payment.length || isEstimate;
   $("#pPaymentDetails").textContent = payment.join(" ");
   $("#euTaxHelp").hidden = !["intra-eu", "reverse-charge", "export"].includes(
     $("#taxTreatment").value,
@@ -628,6 +639,8 @@ function snapshot(includeAssets = true) {
       invoiceLanguage: state.pro.invoiceLanguage,
       brandColor: state.pro.brandColor,
       includeSimplifiedRecipient: state.pro.includeSimplifiedRecipient,
+      automaticNumber: state.pro.automaticNumber,
+      hasPayment: state.pro.hasPayment,
       ...(includeAssets && state.pro.logo ? { logo: state.pro.logo } : {}),
     },
     meta: { ...state.meta },
@@ -654,6 +667,15 @@ function migrate(data) {
     updatedAt: new Date().toISOString(),
     fingerprint: "",
   };
+  data.pro ||= {};
+  if (typeof data.pro.automaticNumber !== "boolean")
+    data.pro.automaticNumber = true;
+  if (typeof data.pro.hasPayment !== "boolean")
+    data.pro.hasPayment = Boolean(
+      data.values?.paymentDate ||
+        data.values?.paymentMethod ||
+        +data.values?.amountPaid,
+    );
   return data;
 }
 function load(raw, migrateDraft = false) {
@@ -724,6 +746,8 @@ function syncProInputs() {
   $("#template").value = state.pro.template;
   $("#invoiceLanguage").value = state.pro.invoiceLanguage || "es";
   $("#brandColor").value = state.pro.brandColor;
+  $("#autoNumber").checked = state.pro.automaticNumber;
+  $("#hasPayment").checked = state.pro.hasPayment;
 }
 
 async function validateLicense() {
@@ -1288,6 +1312,16 @@ function confirmPrint() {
   $("#validationDialog").close();
   window.print();
 }
+function saveIncompleteDraft() {
+  $("#documentStatus").value = "draft";
+  if (state.pro.active) {
+    if (saveToHistory() === false) return;
+    renderHistory();
+  } else {
+    saveDraft();
+  }
+  $("#validationDialog").close();
+}
 
 function setTreatment(value, force = false) {
   const mention = generatedTaxMention(value);
@@ -1343,6 +1377,7 @@ function startNewDocument() {
   };
   state.pro.documentType = "invoice";
   state.pro.includeSimplifiedRecipient = false;
+  state.pro.hasPayment = false;
   state.items = [newItem("", 1, 0, 21, 0, 0)];
   $("#seriesPrefix").value = "FAC";
   const today = new Date(),
@@ -1425,6 +1460,17 @@ $("#addItem").onclick = () => {
 };
 $("#printBtn").onclick = requestPrint;
 $("#confirmPrintBtn").onclick = confirmPrint;
+$("#saveDraftBtn").onclick = saveIncompleteDraft;
+$("#autoNumber").onchange = () => {
+  state.pro.automaticNumber = $("#autoNumber").checked;
+  if (state.pro.automaticNumber)
+    $("#invoiceNumber").value = nextNumber(currentType());
+  update();
+};
+$("#hasPayment").onchange = () => {
+  state.pro.hasPayment = $("#hasPayment").checked;
+  update();
+};
 $("#exportBtn").onclick = () =>
   download(
     `${currentType() === "estimate" ? "presupuesto" : "factura"}-${$("#invoiceNumber").value}.json`,

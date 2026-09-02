@@ -46,7 +46,7 @@
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="content.css" />
     <link rel="stylesheet" href="layout.css" />
-    <link rel="stylesheet" href="design.css?v=20260903-tutorial" />
+    <link rel="stylesheet" href="design.css?v=20260903-document-details" />
   </head>
   <body>
     <a class="skip-link" href="#main-content">Saltar al contenido</a>
@@ -300,7 +300,11 @@
                     value="0"
                 /></label>
               </div>
-              <div class="grid three" id="paymentFields">
+              <label class="check-field payment-toggle"
+                ><input id="hasPayment" type="checkbox" /> Se ha realizado
+                algún pago</label
+              >
+              <div class="grid three" id="paymentFields" hidden>
                 <label
                   >Fecha de pago<input id="paymentDate" type="date"
                 /></label>
@@ -915,6 +919,9 @@
         <div id="validationResults"></div>
         <div class="validation-actions">
           <button class="secondary" value="cancel">Volver y corregir</button
+          ><button class="secondary" id="saveDraftBtn" type="button">
+            Guardar borrador
+          </button
           ><button class="primary" id="confirmPrintBtn" type="button">
             Imprimir de todos modos
           </button>
@@ -922,7 +929,7 @@
       </form>
     </dialog>
     <script src="translations.js?v=20260902-estimate-layout"></script>
-    <script src="app.js?v=20260903-tutorial"></script>
+    <script src="app.js?v=20260903-document-details"></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
