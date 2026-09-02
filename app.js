@@ -6,6 +6,7 @@ const ESTIMATE_TRANSLATIONS = window.HLF_ESTIMATE_TRANSLATIONS || {};
 const RTL_LANGUAGES = new Set(["ar", "ur"]);
 const DB_NAME = "haz-la-factura";
 const DB_VERSION = 1;
+const COMPANY_PROFILE_KEY = "hlf-pro-company-profile";
 let historyCache = [];
 let databasePromise;
 let databaseAvailable = true;
@@ -1012,11 +1013,34 @@ function saveToHistory(options = {}) {
   }
   if (existing >= 0) list[existing] = doc;
   else list.unshift(doc);
+  saveCompanyProfile();
   setHistory(list);
   if (options.advanceNumber && $("#autoNumber").checked && firstIssue)
     commitNumber(currentType());
   renderHistory();
   return true;
+}
+
+function saveCompanyProfile() {
+  if (!state.pro.active || !$("#issuerName").value.trim()) return;
+  const profile = {};
+  ["Name", "Tax", "Address", "Country", "Email"].forEach((suffix) => {
+    profile[`issuer${suffix}`] = $("#issuer" + suffix).value;
+  });
+  localStorage.setItem(COMPANY_PROFILE_KEY, JSON.stringify(profile));
+}
+
+function hydrateCompanyProfile() {
+  if (!state.pro.active) return;
+  try {
+    const profile = JSON.parse(localStorage.getItem(COMPANY_PROFILE_KEY));
+    if (!profile) return;
+    Object.entries(profile).forEach(([id, value]) => {
+      if ($("#" + id) && !$("#" + id).value.trim()) $("#" + id).value = value;
+    });
+  } catch {
+    localStorage.removeItem(COMPANY_PROFILE_KEY);
+  }
 }
 
 function bytesToBase64(bytes) {
@@ -1166,17 +1190,12 @@ async function updateStorageStatus() {
         : `${(bytes / 1048576).toFixed(1)} MB`;
   $("#storageStatus").textContent =
     `${persisted ? "Almacenamiento persistente activo" : "Almacenamiento local estándar"} · ${format(used)} utilizados${quota ? ` de hasta ${format(quota)}` : ""}. Mantén siempre una copia externa.`;
-  $("#persistStorageBtn").hidden = persisted || !navigator.storage.persist;
 }
 async function requestPersistentStorage() {
   if (!navigator.storage?.persist) return;
-  const granted = await navigator.storage.persist();
+  if (navigator.storage.persisted && (await navigator.storage.persisted())) return;
+  await navigator.storage.persist();
   await updateStorageStatus();
-  alert(
-    granted
-      ? "El navegador ha marcado el archivo local como persistente. Aun así, conserva una copia externa."
-      : "El navegador no ha concedido almacenamiento persistente. Puedes seguir usando el archivo y exportar copias.",
-  );
 }
 
 function validateDocument() {
@@ -1443,7 +1462,6 @@ $("#seriesPrefix").onchange = () => {
   $("#" + id).addEventListener("input", renderHistory),
 );
 $("#backupAllBtn").onclick = backupAll;
-$("#persistStorageBtn").onclick = requestPersistentStorage;
 $("#restoreAllFile").onchange = (event) => {
   const reader = new FileReader();
   reader.onload = async () => {
@@ -1470,6 +1488,9 @@ async function initializeApp() {
     drawer.hidden = true;
     drawer.innerHTML = '<summary><span><small>ARCHIVO LOCAL</small><strong>Facturas y presupuestos guardados</strong></span><span class="drawer-action">Abrir archivo</span></summary>';
     drawer.append(historyPanel);
+    drawer.addEventListener("toggle", () => {
+      if (drawer.open) requestPersistentStorage().catch(console.warn);
+    });
     editor.prepend(drawer);
   }
   if (proControls && proFields && proCard && !$("#integratedProTools")) {
@@ -1528,6 +1549,8 @@ async function initializeApp() {
   }
   if (state.pro.logo) applyProAppearance();
   await restoreLicense();
+  hydrateCompanyProfile();
+  update();
   updateStorageStatus().catch(console.warn);
 }
 initializeApp();
