@@ -46,7 +46,7 @@
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="content.css" />
     <link rel="stylesheet" href="layout.css" />
-    <link rel="stylesheet" href="design.css?v=20260902-remove-new" />
+    <link rel="stylesheet" href="design.css?v=20260902-form-accordions" />
   </head>
   <body>
     <a class="skip-link" href="#main-content">Saltar al contenido</a>
@@ -263,11 +263,6 @@
                     <option value="rejected">Rechazado</option>
                   </select></label
                 >
-                <label
-                  >Referencia relacionada<input
-                    id="relatedDocument"
-                    placeholder="FAC-2026-001"
-                /></label>
               </div>
               <div class="grid three" id="correctiveFields" hidden>
                 <label
@@ -378,13 +373,9 @@
               <div id="historyList"></div>
             </div>
           </section>
-          <div class="section-title">
-            <div>
-              <small>DOCUMENTO</small>
-              <h2 id="documentDataTitle">Cabecera de la factura</h2>
-            </div>
-            <span id="saveState">Guardado localmente</span>
-          </div>
+          <details class="form-accordion" open>
+            <summary><span class="accordion-title" id="documentDataTitle">Cabecera de la factura</span></summary>
+            <div class="accordion-content">
           <div class="grid two">
             <label
               ><span id="numberFieldLabel">Número de factura</span
@@ -433,8 +424,13 @@
               </select></label
             >
           </div>
+          <div id="headerProFields"></div>
+            </div>
+          </details>
 
-          <div class="form-section-heading"><small id="partiesEyebrow">EMISOR Y DESTINATARIO</small><h3 id="partiesTitle">Quién emite y quién recibe</h3></div>
+          <details class="form-accordion" open>
+            <summary><span class="accordion-title" id="partiesTitle">Emisor y destinatario</span></summary>
+            <div class="accordion-content">
           <div class="simplified-recipient-control" id="simplifiedRecipientControl" hidden>
             <label class="check-field"><input id="includeSimplifiedRecipient" type="checkbox" /> Incluir datos del destinatario</label>
             <p>Normalmente no son necesarios. Actívalo si el cliente necesita identificarse para ejercer un derecho tributario.</p>
@@ -490,12 +486,20 @@
               /></label>
             </div>
           </div>
+            </div>
+          </details>
 
-          <div class="form-section-heading"><small>DETALLE</small><h3>Conceptos facturados</h3></div>
+          <details class="form-accordion" open>
+            <summary><span class="accordion-title">Conceptos facturados</span></summary>
+            <div class="accordion-content">
           <div id="items"></div>
           <button class="add" id="addItem">+ Añadir concepto</button>
+            </div>
+          </details>
 
-          <div class="form-section-heading"><small>IMPUESTOS</small><h3>Tratamiento fiscal</h3></div>
+          <details class="form-accordion">
+            <summary><span class="accordion-title">Impuestos</span></summary>
+            <div class="accordion-content">
           <div class="tax-settings">
             <div class="grid three tax-row">
               <label
@@ -563,8 +567,12 @@
               como empresa o particular.
             </p>
           </div>
+            </div>
+          </details>
 
-          <div class="form-section-heading"><small>CIERRE</small><h3>Notas y condiciones</h3></div>
+          <details class="form-accordion">
+            <summary><span class="accordion-title">Notas y condiciones</span></summary>
+            <div class="accordion-content">
           <label
             ><span id="notesFieldLabel">Notas y condiciones de pago</span
             ><textarea
@@ -572,6 +580,8 @@
               placeholder="Forma de pago, cuenta bancaria, condiciones..."
             ></textarea>
           </label>
+            </div>
+          </details>
           <div class="actions">
             <button class="primary" id="printBtn">
               Imprimir / Guardar PDF
@@ -902,7 +912,7 @@
       </form>
     </dialog>
     <script src="translations.js?v=20260902-estimate-layout"></script>
-    <script src="app.js?v=20260902-remove-new"></script>
+    <script src="app.js?v=20260902-form-accordions"></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",

@@ -282,9 +282,33 @@ body {
   letter-spacing: .12em;
 }
 .form-section-heading h3 { margin: 6px 0 0; font: 24px Georgia, serif; }
+.form-accordion {
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+.form-accordion:last-of-type { border-bottom: 1px solid var(--line); }
+.form-accordion > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 2px;
+  cursor: pointer;
+  list-style: none;
+}
+.form-accordion > summary::-webkit-details-marker { display: none; }
+.form-accordion > summary::after {
+  content: "+";
+  color: var(--green);
+  font-size: 22px;
+}
+.form-accordion[open] > summary::after { content: "−"; }
+.form-accordion > summary .accordion-title { font: 24px Georgia, serif; }
+.accordion-content { padding: 2px 0 26px; }
+.form-accordion .pro-controls { margin-top: 0; padding-top: 0; border-top: 0; }
+.form-accordion .pro-document-fields { border-color: var(--line); }
 .integrated-pro-tools[hidden],
 .archive-drawer[hidden] { display: none; }
-.integrated-pro-tools { margin-bottom: 38px; }
+.integrated-pro-tools { margin-bottom: 0; }
 .integrated-pro-tools .pro-controls,
 .integrated-pro-tools .pro-document-fields {
   border-color: var(--line);

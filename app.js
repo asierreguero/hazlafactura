@@ -31,7 +31,6 @@ const VALUE_IDS = [
   "notes",
   "seriesPrefix",
   "documentStatus",
-  "relatedDocument",
   "originalInvoiceNumber",
   "originalInvoiceDate",
   "correctionReason",
@@ -504,12 +503,9 @@ function updateDocumentFields() {
   );
   $("#includeSimplifiedRecipient").checked =
     state.pro.includeSimplifiedRecipient;
-  $("#partiesEyebrow").textContent = isSimplified
-    ? "DATOS DEL EMISOR"
-    : "EMISOR Y DESTINATARIO";
   $("#partiesTitle").textContent = isSimplified
-    ? "Quién emite el documento"
-    : "Quién emite y quién recibe";
+    ? "Datos del emisor"
+    : "Emisor y destinatario";
   $("#documentDataTitle").textContent = isEstimate
     ? "Cabecera del presupuesto"
     : `Cabecera de ${TYPE_LABELS[type].toLowerCase()}`;
@@ -580,8 +576,6 @@ function update() {
     references.push(
       `Rectifica la factura ${$("#originalInvoiceNumber").value || "—"}${$("#originalInvoiceDate").value ? ` de ${formatDate($("#originalInvoiceDate").value)}` : ""}. Motivo: ${$("#correctionReason").value || "sin indicar"}.`,
     );
-  if ($("#relatedDocument").value)
-    references.push(`Documento relacionado: ${$("#relatedDocument").value}.`);
   if (isEstimate) {
     if ($("#estimateStartDate").value)
       references.push(
@@ -640,7 +634,6 @@ function snapshot(includeAssets = true) {
 }
 function saveDraft() {
   localStorage.setItem("hazlafactura", JSON.stringify(snapshot(false)));
-  $("#saveState").textContent = "Guardado localmente";
 }
 function migrate(data) {
   if (!data) return data;
@@ -1320,8 +1313,6 @@ function convertEstimate() {
     fingerprint: "",
   };
   changeDocumentType("invoice");
-  const invoiceNumber = $("#invoiceNumber").value;
-  $("#relatedDocument").value = estimateNumber;
   $("#dueDate").value =
     currentType() === "simplified"
       ? ""
@@ -1332,7 +1323,6 @@ function convertEstimate() {
       (doc) => doc.values.invoiceNumber === estimateNumber,
     );
   if (savedEstimate) {
-    savedEstimate.values.relatedDocument = invoiceNumber;
     savedEstimate.values.documentStatus = "accepted";
     savedEstimate.meta.updatedAt = new Date().toISOString();
     setHistory(list);
@@ -1480,13 +1470,19 @@ async function initializeApp() {
     editor.prepend(drawer);
   }
   if (proControls && proFields && proCard && !$("#integratedProTools")) {
-    const integrated = document.createElement("section");
+    const integrated = document.createElement("details");
     integrated.id = "integratedProTools";
-    integrated.className = "integrated-pro-tools";
+    integrated.className = "integrated-pro-tools form-accordion";
     integrated.hidden = true;
-    integrated.innerHTML = '<div class="form-section-heading"><small>AJUSTES DEL DOCUMENTO</small><h3>Diseño y gestión</h3></div>';
-    integrated.append(proControls, proFields);
-    proCard.insertAdjacentElement("afterend", integrated);
+    integrated.open = true;
+    integrated.innerHTML = '<summary><span class="accordion-title">Diseño del documento</span></summary><div class="accordion-content" id="designFields"></div>';
+    if ($("#autoNumber")) proFields.prepend($("#autoNumber").closest("label"));
+    if ($("#convertEstimateBtn")) proFields.append($("#convertEstimateBtn"));
+    integrated.querySelector("#designFields").append(proControls);
+    $("#headerProFields").append(proFields);
+    $("#headerProFields")
+      .closest(".form-accordion")
+      .insertAdjacentElement("afterend", integrated);
     if (toolbar) proCard.insertAdjacentElement("beforebegin", toolbar);
   }
   const workspace = $("#crear");
