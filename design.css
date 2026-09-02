@@ -165,6 +165,15 @@ body {
   color: #fff;
   transform: translateY(-1px);
 }
+.actions .new-document-action {
+  border-color: #bfe7d1;
+  background: #bfe7d1;
+  color: var(--ink);
+}
+.actions .new-document-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(18, 37, 31, 0.16);
+}
 .pro-tools {
   margin: 0 0 42px;
   padding: 18px 20px;

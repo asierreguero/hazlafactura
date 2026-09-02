@@ -1308,6 +1308,14 @@ function setTreatment(value, force = false) {
   update();
 }
 function changeDocumentType(type) {
+  if (type !== state.pro.documentType) {
+    state.meta = {
+      id: uid(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      fingerprint: "",
+    };
+  }
   state.pro.documentType = type;
   if (type === "simplified") {
     state.pro.includeSimplifiedRecipient = false;
@@ -1321,6 +1329,54 @@ function changeDocumentType(type) {
   $("#seriesPrefix").value = prefix;
   $("#invoiceNumber").value = nextNumber(type);
   $("#documentStatus").value = "draft";
+  update();
+}
+function startNewDocument() {
+  if (!confirm("¿Crear un documento nuevo? Los cambios no guardados se perderán."))
+    return;
+  state.meta = {
+    id: uid(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    fingerprint: "",
+  };
+  state.pro.documentType = "invoice";
+  state.pro.includeSimplifiedRecipient = false;
+  state.items = [newItem("", 1, 0, 21, 0, 0)];
+  $("#seriesPrefix").value = "FAC";
+  const today = new Date(),
+    due = new Date(Date.now() + 30 * 864e5),
+    values = {
+      invoiceNumber: nextNumber("invoice"),
+      invoiceDate: today.toISOString().slice(0, 10),
+      dueDate: due.toISOString().slice(0, 10),
+      clientName: "",
+      clientTax: "",
+      clientAddress: "",
+      clientCountry: "España",
+      clientEmail: "",
+      vat: "21",
+      irpf: "0",
+      taxTreatment: "standard",
+      taxMention: "",
+      notes: "",
+      seriesPrefix: "FAC",
+      documentStatus: "draft",
+      originalInvoiceNumber: "",
+      originalInvoiceDate: "",
+      correctionReason: "",
+      estimateStartDate: "",
+      estimateDeliveryDate: "",
+      estimateDeposit: "0",
+      paymentDate: "",
+      paymentMethod: "",
+      amountPaid: "0",
+    };
+  Object.entries(values).forEach(([id, value]) => {
+    if ($("#" + id)) $("#" + id).value = value;
+  });
+  $("#documentType").value = "invoice";
+  renderItems();
   update();
 }
 function convertEstimate() {
@@ -1386,17 +1442,7 @@ $("#importFile").onchange = (event) => {
   };
   reader.readAsText(file);
 };
-$("#clearBtn").onclick = () => {
-  if (
-    confirm(
-      "¿Borrar el borrador guardado en este navegador? El archivo Pro no se borrará.",
-    )
-  ) {
-    localStorage.removeItem("hazlafactura");
-    localStorage.removeItem("facturalista");
-    location.reload();
-  }
-};
+$("#newDocumentBtn").onclick = startNewDocument;
 $("#proAccessBtn").onclick = () =>
   state.pro.active
     ? $("#proControls").scrollIntoView({ behavior: "smooth" })
