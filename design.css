@@ -6,6 +6,8 @@
 }
 body {
   line-height: 1.5;
+  max-width: 100%;
+  overflow-x: clip;
 }
 [hidden] {
   display: none !important;
@@ -184,6 +186,7 @@ body {
 .workspace-tools {
   display: grid;
   gap: 14px;
+  min-width: 0;
   padding: 34px max(5vw, 28px);
   border-top: 1px solid var(--line);
   background: var(--cream);
@@ -192,6 +195,7 @@ body {
 .workspace-tools > .pro-tools,
 .workspace-tools > .archive-drawer {
   width: 100%;
+  min-width: 0;
   max-width: 1180px;
   margin: 0 auto;
 }
@@ -234,6 +238,9 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
+}
+.pro-license-status > * {
+  min-width: 0;
 }
 .pro-license-status p {
   color: #54635c;
@@ -397,6 +404,9 @@ body {
   border-color: var(--line);
 }
 .archive-drawer {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   margin: -12px 0 30px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -413,6 +423,9 @@ body {
 }
 .archive-drawer summary::-webkit-details-marker { display: none; }
 .archive-drawer summary span:first-child { display: grid; gap: 4px; }
+.archive-drawer summary span:first-child,
+.archive-drawer .history,
+#historyList { min-width: 0; }
 .archive-drawer summary strong { font: 19px Georgia, serif; }
 .drawer-action { color: var(--green); font-size: 12px; font-weight: 800; }
 .archive-drawer[open] .drawer-action::before { content: "Cerrar "; }
@@ -804,6 +817,13 @@ select:focus {
   align-items: start;
   padding: 56px max(5vw, 28px);
 }
+.site-footer > * {
+  min-width: 0;
+}
+.site-footer a:not(.brand),
+main a:not(.primary):not(.secondary) {
+  overflow-wrap: anywhere;
+}
 .site-footer p {
   margin: 10px 0;
   color: #cbd9d2;
@@ -925,6 +945,13 @@ summary:focus-visible {
   }
   .pro-tools-head {
     align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .pro-tools-head #proAccessBtn {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
   }
   .pro-license-status {
     align-items: flex-start;
@@ -981,6 +1008,10 @@ summary:focus-visible {
   }
   .editor .section-title h2 {
     font-size: 34px;
+  }
+  .faq h2 {
+    font-size: 36px;
+    overflow-wrap: anywhere;
   }
   .item-row {
     grid-template-columns: minmax(120px, 1fr) 56px 80px 30px;
@@ -1315,7 +1346,11 @@ summary:focus-visible {
 }
 .history-table-wrap {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid rgba(18, 37, 31, 0.12);
   border-radius: 10px;
 }
@@ -1522,8 +1557,25 @@ summary:focus-visible {
     display: block;
   }
   .history-head > div {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
     margin: 10px 0;
-    flex-wrap: wrap;
+  }
+  .history-head .backup-action {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    white-space: normal;
+  }
+  .pro-license-status {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .pro-license-status #releaseLicenseBtn {
+    max-width: 100%;
+    white-space: normal;
   }
   .history-row.extended {
     grid-template-columns: repeat(3, auto);
