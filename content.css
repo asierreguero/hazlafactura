@@ -258,11 +258,12 @@
   content: "✓ ";
 }
 .excluded {
-  color: #b42318;
-  font-weight: 800;
+  color: #c8c5bd;
+  font-size: 18px;
+  font-weight: 500;
 }
 .excluded::before {
-  content: "✕ ";
+  content: none;
 }
 .comparison-note {
   text-align: center;
