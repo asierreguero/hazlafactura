@@ -316,7 +316,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 2px;
+  padding: 20px 16px;
   cursor: pointer;
   list-style: none;
   transition: color .2s ease;
