@@ -1,98 +1,1254 @@
-const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const ids=['invoiceNumber','invoiceDate','dueDate','currency','issuerName','issuerTax','issuerAddress','issuerEmail','clientName','clientTax','clientAddress','clientEmail','vat','irpf','discount','notes'];
-const state={items:[{description:'Servicios profesionales',quantity:1,price:1000}],pro:{active:false,documentType:'invoice',template:'classic',invoiceLanguage:'es',brandColor:'#1f654a',logo:''}};
-const LICENSE_API='https://api.lemonsqueezy.com/v1/licenses';
-const TRANSLATIONS=window.HLF_TRANSLATIONS||{},ESTIMATE_TRANSLATIONS=window.HLF_ESTIMATE_TRANSLATIONS||{},RTL_LANGUAGES=new Set(['ar','ur']);
+const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => [...document.querySelectorAll(selector)];
+const LICENSE_API = "https://api.lemonsqueezy.com/v1/licenses";
+const TRANSLATIONS = window.HLF_TRANSLATIONS || {};
+const ESTIMATE_TRANSLATIONS = window.HLF_ESTIMATE_TRANSLATIONS || {};
+const RTL_LANGUAGES = new Set(["ar", "ur"]);
+const VALUE_IDS = [
+  "invoiceNumber",
+  "invoiceDate",
+  "dueDate",
+  "currency",
+  "issuerName",
+  "issuerTax",
+  "issuerAddress",
+  "issuerCountry",
+  "issuerEmail",
+  "clientName",
+  "clientTax",
+  "clientAddress",
+  "clientCountry",
+  "clientEmail",
+  "vat",
+  "irpf",
+  "taxTreatment",
+  "taxMention",
+  "notes",
+  "seriesPrefix",
+  "documentStatus",
+  "relatedDocument",
+  "originalInvoiceNumber",
+  "originalInvoiceDate",
+  "correctionReason",
+  "estimateStartDate",
+  "estimateDeliveryDate",
+  "estimateDeposit",
+  "paymentDate",
+  "paymentMethod",
+  "amountPaid",
+];
+const TYPE_LABELS = {
+  invoice: "Factura",
+  estimate: "Presupuesto",
+  simplified: "Factura simplificada",
+  corrective: "Factura rectificativa",
+};
+const STATUS_LABELS = {
+  draft: "Borrador",
+  issued: "Emitido",
+  sent: "Enviado",
+  accepted: "Aceptado",
+  paid: "Cobrado",
+  overdue: "Vencido",
+  cancelled: "Anulado",
+  rectified: "Rectificado",
+  rejected: "Rechazado",
+};
+const PREFIXES = {
+  invoice: "FAC",
+  estimate: "PRE",
+  simplified: "FS",
+  corrective: "REC",
+};
+const TAX_MENTIONS = {
+  standard: "",
+  exempt: "Operación exenta de IVA. Motivo y referencia normativa: ",
+  "not-subject": "Operación no sujeta a IVA. Motivo y referencia normativa: ",
+  "reverse-charge": "Inversión del sujeto pasivo.",
+  "intra-eu":
+    "Operación intracomunitaria. Inversión del sujeto pasivo cuando resulte aplicable.",
+  export:
+    "Operación exenta por exportación cuando se cumplan los requisitos aplicables.",
+  custom: "",
+};
+const TAX_MENTION_TRANSLATIONS = {
+  en: {
+    exempt: "VAT-exempt transaction. Reason and legal reference: ",
+    "not-subject":
+      "Transaction not subject to VAT. Reason and legal reference: ",
+    "reverse-charge": "Reverse charge applies.",
+    "intra-eu":
+      "Intra-Community transaction. Reverse charge applies where applicable.",
+    export: "Export exempt from VAT where the applicable requirements are met.",
+  },
+  ca: {
+    exempt: "Operació exempta d’IVA. Motiu i referència normativa: ",
+    "not-subject": "Operació no subjecta a IVA. Motiu i referència normativa: ",
+    "reverse-charge": "Inversió del subjecte passiu.",
+    "intra-eu":
+      "Operació intracomunitària. Inversió del subjecte passiu quan sigui aplicable.",
+    export:
+      "Operació exempta per exportació quan es compleixin els requisits aplicables.",
+  },
+  "ca-valencia": {
+    exempt: "Operació exempta d’IVA. Motiu i referència normativa: ",
+    "not-subject": "Operació no subjecta a IVA. Motiu i referència normativa: ",
+    "reverse-charge": "Inversió del subjecte passiu.",
+    "intra-eu":
+      "Operació intracomunitària. Inversió del subjecte passiu quan siga aplicable.",
+    export:
+      "Operació exempta per exportació quan es complisquen els requisits aplicables.",
+  },
+  gl: {
+    exempt: "Operación exenta de IVE. Motivo e referencia normativa: ",
+    "not-subject":
+      "Operación non suxeita a IVE. Motivo e referencia normativa: ",
+    "reverse-charge": "Inversión do suxeito pasivo.",
+    "intra-eu":
+      "Operación intracomunitaria. Inversión do suxeito pasivo cando resulte aplicable.",
+    export:
+      "Operación exenta por exportación cando se cumpran os requisitos aplicables.",
+  },
+  eu: {
+    exempt:
+      "BEZetik salbuetsitako eragiketa. Arrazoia eta arau-erreferentzia: ",
+    "not-subject":
+      "BEZari lotu gabeko eragiketa. Arrazoia eta arau-erreferentzia: ",
+    "reverse-charge": "Subjektu pasiboaren inbertsioa.",
+    "intra-eu":
+      "Europar Batasunaren barruko eragiketa. Subjektu pasiboaren inbertsioa, aplikagarria denean.",
+    export:
+      "Esportazioagatik salbuetsitako eragiketa, aplikatu beharreko baldintzak betetzen direnean.",
+  },
+};
 
-function escapeHtml(value=''){return String(value).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[c]))}
-function invoiceLanguage(){return state.pro.active&&TRANSLATIONS[state.pro.invoiceLanguage]?state.pro.invoiceLanguage:'es'}
-function invoiceText(){return TRANSLATIONS[invoiceLanguage()]||TRANSLATIONS.es}
-function estimateText(){return ESTIMATE_TRANSLATIONS[invoiceLanguage()]||ESTIMATE_TRANSLATIONS.es||['Válido hasta','ACEPTACIÓN DEL PRESUPUESTO','Nombre y firma del cliente','Fecha']}
-function money(value){return new Intl.NumberFormat(invoiceLanguage(),{style:'currency',currency:$('#currency').value}).format(value||0)}
-function formatDate(value){if(!value)return '';return new Intl.DateTimeFormat(invoiceLanguage()).format(new Date(value+'T12:00:00'))}
-function party(prefix){return [$('#'+prefix+'Name').value,$('#'+prefix+'Tax').value,$('#'+prefix+'Address').value,$('#'+prefix+'Email').value].filter(Boolean).join('\n')}
-function nextNumber(type='invoice'){
-  const year=new Date().getFullYear(),prefix=type==='estimate'?'PRE':'FAC',key=`hlf-sequence-${type}-${year}`;
-  return `${prefix}-${year}-${String((+localStorage.getItem(key)||0)+1).padStart(3,'0')}`;
-}
-function commitNumber(type='invoice'){const year=new Date().getFullYear(),key=`hlf-sequence-${type}-${year}`;localStorage.setItem(key,String((+localStorage.getItem(key)||0)+1))}
+const state = {
+  items: [newItem("Servicios profesionales", 1, 1000, 21, 0, 0)],
+  pro: {
+    active: false,
+    documentType: "invoice",
+    template: "classic",
+    invoiceLanguage: "es",
+    brandColor: "#1f654a",
+    logo: "",
+  },
+  meta: {
+    id: uid(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    fingerprint: "",
+  },
+};
 
-function renderItems(){
-  $('#items').innerHTML=state.items.map((item,i)=>`<div class="item-row"><label>Descripción<input data-i="${i}" data-k="description" value="${escapeHtml(item.description)}" placeholder="Servicio o producto"></label><label>Cantidad<input type="number" min="0" step="0.01" data-i="${i}" data-k="quantity" value="${item.quantity}"></label><label>Precio<input type="number" min="0" step="0.01" data-i="${i}" data-k="price" value="${item.price}"></label><button data-remove="${i}" title="Eliminar" aria-label="Eliminar concepto">×</button></div>`).join('');
-  $$('[data-i]').forEach(el=>el.addEventListener('input',e=>{const i=+e.target.dataset.i,k=e.target.dataset.k;state.items[i][k]=k==='description'?e.target.value:(+e.target.value||0);update()}));
-  $$('[data-remove]').forEach(el=>el.addEventListener('click',e=>{if(state.items.length>1){state.items.splice(+e.currentTarget.dataset.remove,1);renderItems();update()}}));
+function uid() {
+  return crypto.randomUUID
+    ? crypto.randomUUID()
+    : `doc-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
-function applyProAppearance(){
-  const invoice=$('#invoicePreview'),active=state.pro.active,template=active?state.pro.template:'classic',brandColor=active?state.pro.brandColor:'#12251f',documentType=active?state.pro.documentType:'invoice',logo=active?state.pro.logo:'',language=invoiceLanguage(),text=invoiceText();
-  invoice.classList.remove('template-classic','template-minimal','template-bold');
+function newItem(
+  description = "",
+  quantity = 1,
+  price = 0,
+  vat = +$("#vat")?.value || 21,
+  irpf = +$("#irpf")?.value || 0,
+  discount = 0,
+) {
+  return { description, quantity, price, vat, irpf, discount };
+}
+function escapeHtml(value = "") {
+  return String(value).replace(
+    /[&<>'"]/g,
+    (c) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#039;",
+        '"': "&quot;",
+      })[c],
+  );
+}
+function invoiceLanguage() {
+  return state.pro.active && TRANSLATIONS[state.pro.invoiceLanguage]
+    ? state.pro.invoiceLanguage
+    : "es";
+}
+function invoiceText() {
+  return TRANSLATIONS[invoiceLanguage()] || TRANSLATIONS.es;
+}
+function generatedTaxMention(treatment, language = invoiceLanguage()) {
+  if (!treatment || treatment === "standard" || treatment === "custom")
+    return "";
+  return (
+    TAX_MENTION_TRANSLATIONS[language]?.[treatment] ||
+    TAX_MENTIONS[treatment] ||
+    ""
+  );
+}
+function isGeneratedTaxMention(value) {
+  return [
+    ...Object.values(TAX_MENTIONS),
+    ...Object.values(TAX_MENTION_TRANSLATIONS).flatMap((set) =>
+      Object.values(set),
+    ),
+  ].includes(value);
+}
+function estimateText() {
+  return (
+    ESTIMATE_TRANSLATIONS[invoiceLanguage()] ||
+    ESTIMATE_TRANSLATIONS.es || [
+      "Válido hasta",
+      "ACEPTACIÓN DEL PRESUPUESTO",
+      "Nombre y firma del cliente",
+      "Fecha",
+    ]
+  );
+}
+function money(value) {
+  return new Intl.NumberFormat(invoiceLanguage(), {
+    style: "currency",
+    currency: $("#currency").value,
+  }).format(value || 0);
+}
+function formatDate(value) {
+  return value
+    ? new Intl.DateTimeFormat(invoiceLanguage()).format(
+        new Date(`${value}T12:00:00`),
+      )
+    : "";
+}
+function party(prefix) {
+  return [
+    $("#" + prefix + "Name").value,
+    $("#" + prefix + "Tax").value,
+    $("#" + prefix + "Address").value,
+    $("#" + prefix + "Country").value,
+    $("#" + prefix + "Email").value,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+function currentType() {
+  return state.pro.active ? state.pro.documentType : "invoice";
+}
+function sequenceKey(
+  type = currentType(),
+  prefix = $("#seriesPrefix")?.value || PREFIXES[type],
+) {
+  return `hlf-sequence-${type}-${prefix}-${new Date().getFullYear()}`;
+}
+function nextNumber(type = currentType()) {
+  const prefix = $("#seriesPrefix")?.value || PREFIXES[type];
+  return `${prefix}-${new Date().getFullYear()}-${String((+localStorage.getItem(sequenceKey(type, prefix)) || 0) + 1).padStart(3, "0")}`;
+}
+function commitNumber(type = currentType()) {
+  const key = sequenceKey(type);
+  localStorage.setItem(key, String((+localStorage.getItem(key) || 0) + 1));
+}
+function hash(value) {
+  let h = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    h ^= value.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(16).padStart(8, "0");
+}
+
+function renderItems() {
+  $("#items").innerHTML = state.items
+    .map(
+      (item, i) => `<div class="item-row advanced-item">
+    <label class="item-description">Descripción<input data-i="${i}" data-k="description" value="${escapeHtml(item.description)}" placeholder="Servicio o producto"></label>
+    <label>Cantidad<input type="number" min="0" step="0.01" data-i="${i}" data-k="quantity" value="${item.quantity}"></label>
+    <label>Precio<input type="number" step="0.01" data-i="${i}" data-k="price" value="${item.price}"></label>
+    <label>Dto. %<input type="number" min="0" max="100" step="0.01" data-i="${i}" data-k="discount" value="${item.discount || 0}"></label>
+    <label>IVA %<input type="number" min="0" max="100" step="0.01" data-i="${i}" data-k="vat" value="${item.vat || 0}"></label>
+    <label>Ret. %<input type="number" min="0" max="100" step="0.01" data-i="${i}" data-k="irpf" value="${item.irpf || 0}"></label>
+    <button data-remove="${i}" title="Eliminar" aria-label="Eliminar concepto">×</button></div>`,
+    )
+    .join("");
+  $$("[data-i]").forEach((el) =>
+    el.addEventListener("input", (event) => {
+      const i = +event.target.dataset.i,
+        key = event.target.dataset.k;
+      state.items[i][key] =
+        key === "description" ? event.target.value : +event.target.value || 0;
+      update();
+    }),
+  );
+  $$("[data-remove]").forEach((el) =>
+    el.addEventListener("click", (event) => {
+      if (state.items.length > 1) {
+        state.items.splice(+event.currentTarget.dataset.remove, 1);
+        renderItems();
+        update();
+      }
+    }),
+  );
+}
+
+function calculate() {
+  const lines = state.items.map((item) => {
+    const gross = item.quantity * item.price,
+      discount = (gross * (item.discount || 0)) / 100,
+      base = gross - discount,
+      vat = (base * (item.vat || 0)) / 100,
+      irpf = (base * (item.irpf || 0)) / 100;
+    return {
+      ...item,
+      gross,
+      discountAmount: discount,
+      base,
+      vatAmount: vat,
+      irpfAmount: irpf,
+      total: base + vat - irpf,
+    };
+  });
+  return {
+    lines,
+    subtotal: lines.reduce((s, x) => s + x.gross, 0),
+    discount: lines.reduce((s, x) => s + x.discountAmount, 0),
+    base: lines.reduce((s, x) => s + x.base, 0),
+    vat: lines.reduce((s, x) => s + x.vatAmount, 0),
+    irpf: lines.reduce((s, x) => s + x.irpfAmount, 0),
+    total: lines.reduce((s, x) => s + x.total, 0),
+  };
+}
+
+function renderTaxBreakdown(lines) {
+  const groups = new Map();
+  lines.forEach((line) => {
+    const key = `${line.vat}|${line.irpf}`;
+    const group = groups.get(key) || {
+      vat: line.vat,
+      irpf: line.irpf,
+      base: 0,
+      vatAmount: 0,
+      irpfAmount: 0,
+    };
+    group.base += line.base;
+    group.vatAmount += line.vatAmount;
+    group.irpfAmount += line.irpfAmount;
+    groups.set(key, group);
+  });
+  $("#pTaxBreakdown").innerHTML =
+    groups.size > 1
+      ? `<small>DESGLOSE FISCAL</small>${[...groups.values()].map((g) => `<p><span>Base ${money(g.base)} · IVA ${g.vat}%${g.irpf ? ` · Ret. ${g.irpf}%` : ""}</span><b>${money(g.vatAmount - g.irpfAmount)}</b></p>`).join("")}`
+      : "";
+}
+
+function applyProAppearance() {
+  const invoice = $("#invoicePreview"),
+    active = state.pro.active,
+    template = active ? state.pro.template : "classic",
+    color = active ? state.pro.brandColor : "#12251f",
+    type = currentType(),
+    logo = active ? state.pro.logo : "",
+    language = invoiceLanguage(),
+    text = invoiceText();
+  invoice.classList.remove(
+    "template-classic",
+    "template-minimal",
+    "template-bold",
+    "template-compact",
+    "template-elegant",
+  );
   invoice.classList.add(`template-${template}`);
-  invoice.style.setProperty('--brand-color',brandColor);
-  invoice.lang=language;invoice.dir=RTL_LANGUAGES.has(language)?'rtl':'ltr';
-  $('#pDocumentTitle').textContent=documentType==='estimate'?text[1]:text[0];
-  $('#convertEstimateBtn').hidden=!active||documentType!=='estimate';
-  const img=$('#pLogoImage'),fallback=$('#pLogo span');
-  img.hidden=!logo;fallback.hidden=!!logo;if(logo)img.src=logo;
+  invoice.style.setProperty("--brand-color", color);
+  invoice.lang = language;
+  invoice.dir = RTL_LANGUAGES.has(language) ? "rtl" : "ltr";
+  const titles = {
+    invoice: text[0],
+    estimate: text[1],
+    simplified: `${text[0]} SIMPLIFICADA`,
+    corrective: `${text[0]} RECTIFICATIVA`,
+  };
+  $("#pDocumentTitle").textContent = titles[type];
+  $("#convertEstimateBtn").hidden = !active || type !== "estimate";
+  const img = $("#pLogoImage"),
+    fallback = $("#pLogo span");
+  img.hidden = !logo;
+  fallback.hidden = !!logo;
+  if (logo) img.src = logo;
 }
-function update(){
-  const text=invoiceText(),estimateLabels=estimateText(),isEstimate=state.pro.active&&state.pro.documentType==='estimate',subtotal=state.items.reduce((sum,x)=>sum+x.quantity*x.price,0),discountRate=+$('#discount').value||0,discount=subtotal*discountRate/100,base=subtotal-discount,vatRate=+$('#vat').value||0,irpfRate=+$('#irpf').value||0,vat=base*vatRate/100,irpf=base*irpfRate/100,total=base+vat-irpf;
-  $('#documentDataTitle').textContent=isEstimate?'Datos del presupuesto':'Datos de la factura';$('#numberFieldLabel').textContent=isEstimate?'Número de presupuesto':'Número de factura';$('#dateFieldLabel').textContent=isEstimate?'Fecha del presupuesto':'Fecha de emisión';$('#dueDateFieldLabel').textContent=isEstimate?'Oferta válida hasta':'Fecha de vencimiento';$('#notesFieldLabel').textContent=isEstimate?'Condiciones del presupuesto':'Notas y condiciones de pago';$('#notes').placeholder=isEstimate?'Alcance, plazo de entrega, forma de aceptación...':'Forma de pago, cuenta bancaria, condiciones...';
-  $('#pIssuerLabel').textContent=text[4];$('#pClientLabel').textContent=text[5];$('#pConceptLabel').textContent=text[6];$('#pQuantityLabel').textContent=text[7];$('#pPriceLabel').textContent=text[8];$('#pLineTotalLabel').textContent=text[9];$('#pSubtotalLabel').textContent=text[10];$('#pDiscountLabel').textContent=text[11];$('#pGrandTotalLabel').textContent=text[9];$('#pNotesLabel').textContent=text[14];$('#freeWatermark').textContent=text[16];
-  $('#pIssuerName').textContent=$('#issuerName').value||text[17];$('#pInvoiceNumber').textContent=$('#invoiceNumber').value;$('#pInvoiceDate').textContent=`${text[2]}: ${formatDate($('#invoiceDate').value)}${$('#dueDate').value?' · '+(isEstimate?estimateLabels[0]:text[3])+': '+formatDate($('#dueDate').value):''}`;
-  $('#pIssuer').textContent=party('issuer')||text[18];$('#pClient').textContent=party('client')||text[19];
-  $('#pItems').innerHTML=state.items.map(x=>`<tr><td>${escapeHtml(x.description)||'—'}</td><td>${x.quantity}</td><td>${money(x.price)}</td><td>${money(x.quantity*x.price)}</td></tr>`).join('');
-  $('#pSubtotal').textContent=money(subtotal);$('#pDiscount').textContent='− '+money(discount);$('#pDiscountRow').hidden=!discount;$('#pVatLabel').textContent=`${text[12]} (${vatRate}%)`;$('#pVat').textContent=money(vat);$('#pIrpfLabel').textContent=`${text[13]} (${irpfRate}%)`;$('#pIrpf').textContent='− '+money(irpf);$('#pIrpfRow').hidden=!irpf;$('#pTotal').textContent=money(total);$('#pNotes').textContent=$('#notes').value||text[15];$('#estimateAcceptance').hidden=!isEstimate;$('#pAcceptanceLabel').textContent=estimateLabels[1];$('#pAcceptanceName').textContent=estimateLabels[2];$('#pAcceptanceDate').textContent=estimateLabels[3];
-  applyProAppearance();save();
-}
-function snapshot(){const values={};ids.forEach(id=>values[id]=$('#'+id).value);return {version:3,values,items:state.items,pro:{documentType:state.pro.documentType,template:state.pro.template,invoiceLanguage:state.pro.invoiceLanguage,brandColor:state.pro.brandColor,logo:state.pro.logo}}}
-function save(){localStorage.setItem('hazlafactura',JSON.stringify(snapshot()));$('#saveState').textContent='Guardado localmente'}
-function load(data,migrateDraft=false){if(!data)return;Object.entries(data.values||{}).forEach(([id,v])=>{if($('#'+id))$('#'+id).value=v});if(migrateDraft&&data.pro?.documentType!=='estimate'&&/^HLF-\d{4}-\d+$/.test($('#invoiceNumber').value))$('#invoiceNumber').value=$('#invoiceNumber').value.replace(/^HLF-/,'FAC-');if(Array.isArray(data.items)&&data.items.length)state.items=data.items;if(data.pro)Object.assign(state.pro,data.pro);syncProInputs();renderItems();update()}
-function download(name,content,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
 
-function setProActive(active){
-  state.pro.active=active;document.body.classList.toggle('pro-active',active);$('#proControls').hidden=!active;$('#historyPanel').hidden=!active;$('#releaseLicenseBtn').hidden=!active;$('#proAccessBtn').textContent=active?'Pro activo':'Activar licencia';$('#proAccessBtn').disabled=active;$('#proStatus').textContent=active?'Licencia activa en este navegador. Tus datos siguen siendo locales.':'Personalización, presupuestos, historial y numeración automática.';
-  $('#freeWatermark').hidden=active;
-  if(active){syncProInputs();renderHistory()}
+function updateDocumentFields() {
+  const type = currentType(),
+    isEstimate = type === "estimate",
+    isCorrective = type === "corrective";
+  $("#correctiveFields").hidden = !isCorrective;
+  $("#estimateFields").hidden = !isEstimate;
+  document.body.classList.toggle("simplified-document", type === "simplified");
+  $("#documentDataTitle").textContent = isEstimate
+    ? "Datos del presupuesto"
+    : TYPE_LABELS[type];
+  $("#numberFieldLabel").textContent = isEstimate
+    ? "Número de presupuesto"
+    : `Número de ${TYPE_LABELS[type].toLowerCase()}`;
+  $("#dateFieldLabel").textContent = isEstimate
+    ? "Fecha del presupuesto"
+    : "Fecha de emisión";
+  $("#dueDateFieldLabel").textContent = isEstimate
+    ? "Oferta válida hasta"
+    : "Fecha de vencimiento";
+  $("#notesFieldLabel").textContent = isEstimate
+    ? "Condiciones del presupuesto"
+    : "Notas y condiciones de pago";
+  $("#estimateAcceptance").hidden = !isEstimate;
 }
-function syncProInputs(){if(!state.pro.active)return;$('#documentType').value=state.pro.documentType;$('#template').value=state.pro.template;$('#invoiceLanguage').value=state.pro.invoiceLanguage||'es';$('#brandColor').value=state.pro.brandColor}
-async function validateLicense(){
-  const key=$('#licenseKey').value.trim(),message=$('#licenseMessage'),button=$('#validateLicenseBtn');if(!key){message.textContent='Introduce una clave de licencia.';return}
-  button.disabled=true;button.textContent='Validando…';message.textContent='Conectando con Lemon Squeezy…';
-  try{
-    const storedKey=localStorage.getItem('hlf-pro-license'),storedInstance=localStorage.getItem('hlf-pro-instance');
-    const reusingInstance=storedKey===key&&storedInstance;
-    const body=new URLSearchParams({license_key:key});
-    if(reusingInstance)body.set('instance_id',storedInstance);else body.set('instance_name',`Haz la Factura · ${navigator.platform||'navegador'}`);
-    const action=reusingInstance?'validate':'activate';
-    const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15000);
-    const response=await fetch(`${LICENSE_API}/${action}`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body,signal:controller.signal});clearTimeout(timeout);const data=await response.json();
-    const product=String(data.meta?.product_name||'').toLowerCase();
-    const accepted=reusingInstance?data.valid:data.activated;
-    if(!response.ok||!accepted||!product.includes('haz la factura'))throw new Error(data.error||'La clave no corresponde a Haz la Factura Pro o no se ha podido activar.');
-    localStorage.setItem('hlf-pro-license',key);if(data.instance?.id)localStorage.setItem('hlf-pro-instance',data.instance.id);localStorage.setItem('hlf-pro-license-check',String(Date.now()));setProActive(true);$('#licenseDialog').close();update();
-  }catch(error){message.textContent=error.name==='AbortError'?'La validación está tardando demasiado. Comprueba la conexión y vuelve a intentarlo.':(error.message||'No se pudo validar la licencia. Revisa la conexión e inténtalo de nuevo.')}finally{button.disabled=false;button.textContent='Validar y activar'}
-}
-async function restoreLicense(){
-  const key=localStorage.getItem('hlf-pro-license'),instance=localStorage.getItem('hlf-pro-instance');if(!key||!instance)return;
-  const last=+localStorage.getItem('hlf-pro-license-check')||0;if(Date.now()-last<7*864e5){setProActive(true);update();return}
-  try{const body=new URLSearchParams({license_key:key,instance_id:instance});const response=await fetch(`${LICENSE_API}/validate`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});const data=await response.json();if(data.valid&&String(data.meta?.product_name||'').toLowerCase().includes('haz la factura')){localStorage.setItem('hlf-pro-license-check',String(Date.now()));setProActive(true);update()}else{localStorage.removeItem('hlf-pro-license');localStorage.removeItem('hlf-pro-instance')}}catch{setProActive(true);update()}
-}
-async function releaseLicense(){
-  if(!confirm('¿Liberar la licencia de este navegador? Tus documentos locales no se borrarán.'))return;
-  const key=localStorage.getItem('hlf-pro-license'),instance=localStorage.getItem('hlf-pro-instance'),button=$('#releaseLicenseBtn');
-  if(!key||!instance){localStorage.removeItem('hlf-pro-license');localStorage.removeItem('hlf-pro-instance');localStorage.removeItem('hlf-pro-license-check');setProActive(false);update();return}
-  button.disabled=true;button.textContent='Liberando…';
-  try{
-    const body=new URLSearchParams({license_key:key,instance_id:instance});const response=await fetch(`${LICENSE_API}/deactivate`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});const data=await response.json();
-    if(!response.ok||!data.deactivated)throw new Error(data.error||'No se pudo liberar la licencia.');
-    localStorage.removeItem('hlf-pro-license');localStorage.removeItem('hlf-pro-instance');localStorage.removeItem('hlf-pro-license-check');setProActive(false);update();alert('Licencia liberada. Ya puedes activarla en otro navegador o dispositivo.');
-  }catch(error){alert(error.message||'No se pudo liberar la licencia. Comprueba la conexión e inténtalo de nuevo.')}finally{button.disabled=false;button.textContent='Liberar licencia'}
-}
-function history(){try{return JSON.parse(localStorage.getItem('hlf-pro-history'))||[]}catch{return[]}}
-function renderHistory(){const list=history();$('#historyList').innerHTML=list.length?list.map((doc,i)=>`<div class="history-row"><span><strong>${escapeHtml(doc.values.invoiceNumber)}</strong> · ${doc.pro.documentType==='estimate'?'Presupuesto':'Factura'} · ${escapeHtml(doc.values.clientName||'Sin cliente')}</span><button class="secondary" data-load-history="${i}">Abrir</button><button class="danger-text" data-delete-history="${i}">Eliminar</button></div>`).join(''):'<p class="history-empty">Aún no has guardado documentos.</p>';$$('[data-load-history]').forEach(b=>b.onclick=()=>load(history()[+b.dataset.loadHistory]));$$('[data-delete-history]').forEach(b=>b.onclick=()=>{const list=history();list.splice(+b.dataset.deleteHistory,1);localStorage.setItem('hlf-pro-history',JSON.stringify(list));renderHistory()})}
-function saveToHistory(){const list=history(),doc=snapshot(),existing=list.findIndex(x=>x.values.invoiceNumber===doc.values.invoiceNumber);if(existing>=0)list[existing]=doc;else list.unshift(doc);localStorage.setItem('hlf-pro-history',JSON.stringify(list.slice(0,100)));if($('#autoNumber').checked&&existing<0){commitNumber(state.pro.documentType);$('#invoiceNumber').value=nextNumber(state.pro.documentType)}renderHistory();update()}
 
-const today=new Date(),due=new Date(Date.now()+30*864e5);$('#invoiceDate').value=today.toISOString().slice(0,10);$('#dueDate').value=due.toISOString().slice(0,10);$('#invoiceNumber').value=nextNumber();
-ids.forEach(id=>$('#'+id).addEventListener('input',update));$('#addItem').onclick=()=>{state.items.push({description:'',quantity:1,price:0});renderItems();update()};$('#printBtn').onclick=()=>window.print();$('#exportBtn').onclick=()=>download(`${state.pro.documentType==='estimate'?'presupuesto':'factura'}-${$('#invoiceNumber').value}.json`,JSON.stringify(snapshot(),null,2),'application/json');$('#importFile').onchange=e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{load(JSON.parse(reader.result))}catch{alert('El archivo no es una copia válida de Haz la Factura.')}};reader.readAsText(file)};$('#clearBtn').onclick=()=>{if(confirm('¿Borrar los datos de la factura guardados en este navegador?')){localStorage.removeItem('hazlafactura');localStorage.removeItem('facturalista');location.reload()}};
-$('#proAccessBtn').onclick=()=>state.pro.active?$('#proControls').scrollIntoView({behavior:'smooth'}):$('#licenseDialog').showModal();$('#validateLicenseBtn').addEventListener('click',validateLicense);$('#releaseLicenseBtn').addEventListener('click',releaseLicense);$('#licenseDialog form').addEventListener('submit',event=>{if(event.submitter?.classList.contains('dialog-close'))return;event.preventDefault();validateLicense()});
-$('#documentType').onchange=e=>{state.pro.documentType=e.target.value;if($('#autoNumber').checked)$('#invoiceNumber').value=nextNumber(state.pro.documentType);update()};$('#template').onchange=e=>{state.pro.template=e.target.value;update()};$('#invoiceLanguage').onchange=e=>{state.pro.invoiceLanguage=e.target.value;update()};$('#brandColor').oninput=e=>{state.pro.brandColor=e.target.value;update()};$('#brandLogo').onchange=e=>{const file=e.target.files[0];if(!file)return;if(file.size>600000){alert('El logo debe ocupar menos de 600 KB.');return}const reader=new FileReader();reader.onload=()=>{state.pro.logo=reader.result;update()};reader.readAsDataURL(file)};$('#saveDocumentBtn').onclick=saveToHistory;$('#convertEstimateBtn').onclick=()=>{state.pro.documentType='invoice';$('#documentType').value='invoice';$('#invoiceNumber').value=nextNumber('invoice');$('#dueDate').value=new Date(Date.now()+30*864e5).toISOString().slice(0,10);update()};
-const stored=localStorage.getItem('hazlafactura')||localStorage.getItem('facturalista');if(stored){try{load(JSON.parse(stored),true)}catch{renderItems();update()}}else{renderItems();update()}restoreLicense();
+function update() {
+  const text = invoiceText(),
+    estimateLabels = estimateText(),
+    type = currentType(),
+    isEstimate = type === "estimate",
+    totals = calculate();
+  updateDocumentFields();
+  $("#pIssuerLabel").textContent = text[4];
+  $("#pClientLabel").textContent = text[5];
+  $("#pConceptLabel").textContent = text[6];
+  $("#pQuantityLabel").textContent = text[7];
+  $("#pPriceLabel").textContent = text[8];
+  $("#pLineTotalLabel").textContent = text[9];
+  $("#pSubtotalLabel").textContent = text[10];
+  $("#pDiscountLabel").textContent = text[11];
+  $("#pGrandTotalLabel").textContent = text[9];
+  $("#pNotesLabel").textContent = text[14];
+  $("#freeWatermark").textContent = text[16];
+  $("#pIssuerName").textContent = $("#issuerName").value || text[17];
+  $("#pInvoiceNumber").textContent = $("#invoiceNumber").value;
+  $("#pInvoiceDate").textContent =
+    `${text[2]}: ${formatDate($("#invoiceDate").value)}${$("#dueDate").value ? ` · ${isEstimate ? estimateLabels[0] : text[3]}: ${formatDate($("#dueDate").value)}` : ""}`;
+  $("#pIssuer").textContent = party("issuer") || text[18];
+  $("#pClient").textContent = party("client") || text[19];
+  $("#pItems").innerHTML = totals.lines
+    .map(
+      (line) =>
+        `<tr><td>${escapeHtml(line.description) || "—"}${line.discount ? `<small class="line-tax">Dto. ${line.discount}% · IVA ${line.vat}%${line.irpf ? ` · Ret. ${line.irpf}%` : ""}</small>` : `<small class="line-tax">IVA ${line.vat}%${line.irpf ? ` · Ret. ${line.irpf}%` : ""}</small>`}</td><td>${line.quantity}</td><td>${money(line.price)}</td><td>${money(line.total)}</td></tr>`,
+    )
+    .join("");
+  $("#pSubtotal").textContent = money(totals.subtotal);
+  $("#pDiscount").textContent = `− ${money(totals.discount)}`;
+  $("#pDiscountRow").hidden = !totals.discount;
+  $("#pVatLabel").textContent = text[12];
+  $("#pVat").textContent = money(totals.vat);
+  $("#pIrpfLabel").textContent = text[13];
+  $("#pIrpf").textContent = `− ${money(totals.irpf)}`;
+  $("#pIrpfRow").hidden = !totals.irpf;
+  $("#pTotal").textContent = money(totals.total);
+  renderTaxBreakdown(totals.lines);
+  $("#pNotes").textContent = $("#notes").value || text[15];
+  $("#pAcceptanceLabel").textContent = estimateLabels[1];
+  $("#pAcceptanceName").textContent = estimateLabels[2];
+  $("#pAcceptanceDate").textContent = estimateLabels[3];
+  const mention = $("#taxMention").value.trim();
+  $("#pTaxMention").hidden = !mention;
+  $("#pTaxMention").textContent = mention;
+  const references = [];
+  if (type === "corrective")
+    references.push(
+      `Rectifica la factura ${$("#originalInvoiceNumber").value || "—"}${$("#originalInvoiceDate").value ? ` de ${formatDate($("#originalInvoiceDate").value)}` : ""}. Motivo: ${$("#correctionReason").value || "sin indicar"}.`,
+    );
+  if ($("#relatedDocument").value)
+    references.push(`Documento relacionado: ${$("#relatedDocument").value}.`);
+  if (isEstimate) {
+    if ($("#estimateStartDate").value)
+      references.push(
+        `Inicio estimado: ${formatDate($("#estimateStartDate").value)}.`,
+      );
+    if ($("#estimateDeliveryDate").value)
+      references.push(
+        `Entrega estimada: ${formatDate($("#estimateDeliveryDate").value)}.`,
+      );
+    if (+$("#estimateDeposit").value)
+      references.push(`Anticipo solicitado: ${$("#estimateDeposit").value} %.`);
+  }
+  $("#pDocumentReference").hidden = !references.length;
+  $("#pDocumentReference").textContent = references.join(" ");
+  const payment = [];
+  if ($("#documentStatus").value === "paid") payment.push("Estado: cobrada.");
+  if ($("#paymentDate").value)
+    payment.push(`Fecha de pago: ${formatDate($("#paymentDate").value)}.`);
+  if ($("#paymentMethod").value.trim())
+    payment.push(`Método: ${$("#paymentMethod").value.trim()}.`);
+  if (+$("#amountPaid").value > 0) {
+    payment.push(`Importe cobrado: ${money(+$("#amountPaid").value)}.`);
+    const pending = Math.max(0, totals.total - +$("#amountPaid").value);
+    if (pending) payment.push(`Pendiente: ${money(pending)}.`);
+  }
+  $("#pPaymentSummary").hidden =
+    !state.pro.active || !payment.length || isEstimate;
+  $("#pPaymentDetails").textContent = payment.join(" ");
+  $("#euTaxHelp").hidden = !["intra-eu", "reverse-charge", "export"].includes(
+    $("#taxTreatment").value,
+  );
+  applyProAppearance();
+  state.meta.updatedAt = new Date().toISOString();
+  saveDraft();
+}
+
+function snapshot() {
+  const values = {};
+  VALUE_IDS.forEach((id) => {
+    if ($("#" + id)) values[id] = $("#" + id).value;
+  });
+  return {
+    version: 5,
+    values,
+    items: state.items,
+    pro: {
+      documentType: state.pro.documentType,
+      template: state.pro.template,
+      invoiceLanguage: state.pro.invoiceLanguage,
+      brandColor: state.pro.brandColor,
+      logo: state.pro.logo,
+    },
+    meta: { ...state.meta },
+  };
+}
+function saveDraft() {
+  localStorage.setItem("hazlafactura", JSON.stringify(snapshot()));
+  $("#saveState").textContent = "Guardado localmente";
+}
+function migrate(data) {
+  if (!data) return data;
+  data.version ||= 1;
+  if (data.items)
+    data.items = data.items.map((item) => ({
+      description: item.description || "",
+      quantity: +item.quantity || 0,
+      price: +item.price || 0,
+      vat: item.vat ?? +(data.values?.vat || 0),
+      irpf: item.irpf ?? +(data.values?.irpf || 0),
+      discount: item.discount ?? +(data.values?.discount || 0),
+    }));
+  data.meta ||= {
+    id: uid(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    fingerprint: "",
+  };
+  return data;
+}
+function load(raw, migrateDraft = false) {
+  const data = migrate(raw);
+  if (!data) return;
+  Object.entries(data.values || {}).forEach(([id, value]) => {
+    if ($("#" + id)) $("#" + id).value = value;
+  });
+  if (
+    migrateDraft &&
+    data.pro?.documentType !== "estimate" &&
+    /^HLF-\d{4}-\d+$/.test($("#invoiceNumber").value)
+  )
+    $("#invoiceNumber").value = $("#invoiceNumber").value.replace(
+      /^HLF-/,
+      "FAC-",
+    );
+  if (Array.isArray(data.items) && data.items.length) state.items = data.items;
+  if (data.pro) Object.assign(state.pro, data.pro);
+  state.meta = data.meta;
+  syncProInputs();
+  renderItems();
+  update();
+}
+function download(name, content, type = "application/json") {
+  const anchor = document.createElement("a");
+  anchor.href = URL.createObjectURL(new Blob([content], { type }));
+  anchor.download = name;
+  anchor.click();
+  setTimeout(() => URL.revokeObjectURL(anchor.href), 500);
+}
+
+function setProActive(active) {
+  state.pro.active = active;
+  document.body.classList.toggle("pro-active", active);
+  $("#proControls").hidden = !active;
+  $("#proDocumentFields").hidden = !active;
+  $("#historyPanel").hidden = !active;
+  $("#releaseLicenseBtn").hidden = !active;
+  $("#proAccessBtn").textContent = active ? "Pro activo" : "Activar licencia";
+  $("#proAccessBtn").disabled = active;
+  $("#proStatus").textContent = active
+    ? "Licencia activa en este navegador. Tus datos siguen siendo locales."
+    : "Personalización, presupuestos, historial y numeración automática.";
+  $("#freeWatermark").hidden = active;
+  if (active) {
+    syncProInputs();
+    renderHistory();
+    checkBackupReminder();
+  }
+}
+function syncProInputs() {
+  if (!state.pro.active) return;
+  $("#documentType").value = state.pro.documentType;
+  $("#template").value = state.pro.template;
+  $("#invoiceLanguage").value = state.pro.invoiceLanguage || "es";
+  $("#brandColor").value = state.pro.brandColor;
+}
+
+async function validateLicense() {
+  const key = $("#licenseKey").value.trim(),
+    message = $("#licenseMessage"),
+    button = $("#validateLicenseBtn");
+  if (!key) {
+    message.textContent = "Introduce una clave de licencia.";
+    return;
+  }
+  button.disabled = true;
+  button.textContent = "Validando…";
+  message.textContent = "Conectando con Lemon Squeezy…";
+  try {
+    const storedKey = localStorage.getItem("hlf-pro-license"),
+      storedInstance = localStorage.getItem("hlf-pro-instance"),
+      reuse = storedKey === key && storedInstance,
+      body = new URLSearchParams({ license_key: key });
+    if (reuse) body.set("instance_id", storedInstance);
+    else
+      body.set(
+        "instance_name",
+        `Haz la Factura · ${navigator.platform || "navegador"}`,
+      );
+    const controller = new AbortController(),
+      timeout = setTimeout(() => controller.abort(), 15000);
+    const response = await fetch(
+      `${LICENSE_API}/${reuse ? "validate" : "activate"}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body,
+        signal: controller.signal,
+      },
+    );
+    clearTimeout(timeout);
+    const data = await response.json(),
+      product = String(data.meta?.product_name || "").toLowerCase(),
+      accepted = reuse ? data.valid : data.activated;
+    if (!response.ok || !accepted || !product.includes("haz la factura"))
+      throw new Error(
+        data.error || "La clave no corresponde a Haz la Factura Pro.",
+      );
+    localStorage.setItem("hlf-pro-license", key);
+    if (data.instance?.id)
+      localStorage.setItem("hlf-pro-instance", data.instance.id);
+    localStorage.setItem("hlf-pro-license-check", String(Date.now()));
+    setProActive(true);
+    $("#licenseDialog").close();
+    update();
+  } catch (error) {
+    message.textContent =
+      error.name === "AbortError"
+        ? "La validación está tardando demasiado."
+        : error.message || "No se pudo validar la licencia.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Validar y activar";
+  }
+}
+async function restoreLicense() {
+  const key = localStorage.getItem("hlf-pro-license"),
+    instance = localStorage.getItem("hlf-pro-instance");
+  if (!key || !instance) return;
+  const last = +localStorage.getItem("hlf-pro-license-check") || 0;
+  if (Date.now() - last < 7 * 864e5) {
+    setProActive(true);
+    update();
+    return;
+  }
+  try {
+    const body = new URLSearchParams({
+        license_key: key,
+        instance_id: instance,
+      }),
+      response = await fetch(`${LICENSE_API}/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body,
+      }),
+      data = await response.json();
+    if (
+      data.valid &&
+      String(data.meta?.product_name || "")
+        .toLowerCase()
+        .includes("haz la factura")
+    ) {
+      localStorage.setItem("hlf-pro-license-check", String(Date.now()));
+      setProActive(true);
+      update();
+    } else clearLocalLicense();
+  } catch {
+    setProActive(true);
+    update();
+  }
+}
+function clearLocalLicense() {
+  ["hlf-pro-license", "hlf-pro-instance", "hlf-pro-license-check"].forEach(
+    (key) => localStorage.removeItem(key),
+  );
+}
+async function releaseLicense() {
+  if (
+    !confirm(
+      "¿Liberar la licencia de este navegador? Tus documentos locales no se borrarán.",
+    )
+  )
+    return;
+  const key = localStorage.getItem("hlf-pro-license"),
+    instance = localStorage.getItem("hlf-pro-instance"),
+    button = $("#releaseLicenseBtn");
+  if (!key || !instance) {
+    clearLocalLicense();
+    setProActive(false);
+    update();
+    return;
+  }
+  button.disabled = true;
+  button.textContent = "Liberando…";
+  try {
+    const body = new URLSearchParams({
+        license_key: key,
+        instance_id: instance,
+      }),
+      response = await fetch(`${LICENSE_API}/deactivate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body,
+      }),
+      data = await response.json();
+    if (!response.ok || !data.deactivated)
+      throw new Error(data.error || "No se pudo liberar la licencia.");
+    clearLocalLicense();
+    setProActive(false);
+    update();
+    alert("Licencia liberada.");
+  } catch (error) {
+    alert(error.message || "No se pudo liberar la licencia.");
+  } finally {
+    button.disabled = false;
+    button.textContent = "Liberar licencia";
+  }
+}
+
+function getHistory() {
+  try {
+    return JSON.parse(localStorage.getItem("hlf-pro-history")) || [];
+  } catch {
+    return [];
+  }
+}
+function setHistory(list) {
+  localStorage.setItem("hlf-pro-history", JSON.stringify(list.slice(0, 100)));
+}
+function effectiveStatus(doc) {
+  const status = doc.values.documentStatus || "draft",
+    due = doc.values.dueDate;
+  return !["paid", "cancelled", "rectified"].includes(status) &&
+    due &&
+    due < new Date().toISOString().slice(0, 10)
+    ? "overdue"
+    : status;
+}
+function overdueDays(doc) {
+  if (effectiveStatus(doc) !== "overdue" || !doc.values.dueDate) return 0;
+  const due = new Date(`${doc.values.dueDate}T12:00:00`),
+    today = new Date();
+  today.setHours(12, 0, 0, 0);
+  return Math.max(0, Math.floor((today - due) / 864e5));
+}
+function collectionText(doc, formal = false) {
+  const total = calculateDocument(doc),
+    number = doc.values.invoiceNumber,
+    due = doc.values.dueDate || "sin fecha indicada",
+    client = doc.values.clientName || "cliente";
+  return formal
+    ? `Asunto: Requerimiento de pago de la factura ${number}\n\nA la atención de ${client}: la factura ${number}, por ${moneyFor(doc, total)}, venció el ${due} y continúa pendiente. Solicitamos su abono y confirmación de pago. Este mensaje no sustituye asesoramiento jurídico.`
+    : `Hola, te escribo por la factura ${number}, por ${moneyFor(doc, total)}, con vencimiento ${due}. ¿Puedes confirmar que está aprobada y la fecha prevista de pago? Adjunto de nuevo la factura. Gracias.`;
+}
+function calculateDocument(doc) {
+  return (doc.items || []).reduce((sum, item) => {
+    const gross = (+item.quantity || 0) * (+item.price || 0),
+      base = gross * (1 - (+item.discount || 0) / 100);
+    return sum + base * (1 + (+item.vat || 0) / 100 - (+item.irpf || 0) / 100);
+  }, 0);
+}
+function moneyFor(doc, value) {
+  try {
+    return new Intl.NumberFormat("es", {
+      style: "currency",
+      currency: doc.values.currency || "EUR",
+    }).format(value);
+  } catch {
+    return `${value.toFixed(2)} ${doc.values.currency || "EUR"}`;
+  }
+}
+function renderHistory() {
+  let list = getHistory(),
+    query = $("#historySearch")?.value.toLowerCase() || "",
+    type = $("#historyTypeFilter")?.value || "",
+    status = $("#historyStatusFilter")?.value || "";
+  list = list.filter(
+    (doc) =>
+      (!query ||
+        `${doc.values.invoiceNumber} ${doc.values.clientName}`
+          .toLowerCase()
+          .includes(query)) &&
+      (!type || doc.pro.documentType === type) &&
+      (!status || effectiveStatus(doc) === status),
+  );
+  $("#historyList").innerHTML = list.length
+    ? list
+        .map((doc) => {
+          const originalIndex = getHistory().findIndex(
+              (x) => x.meta.id === doc.meta.id,
+            ),
+            total = calculateDocument(doc),
+            paid = +doc.values.amountPaid || 0,
+            pending = Math.max(0, total - paid),
+            statusValue = effectiveStatus(doc),
+            delay = overdueDays(doc),
+            modified = doc.meta?.updatedAt
+              ? new Intl.DateTimeFormat("es", { dateStyle: "short" }).format(
+                  new Date(doc.meta.updatedAt),
+                )
+              : "";
+          return `<div class="history-row extended"><span><strong>${escapeHtml(doc.values.invoiceNumber)}</strong> · ${TYPE_LABELS[doc.pro.documentType] || "Factura"} · ${escapeHtml(doc.values.clientName || "Sin cliente")}<small>${STATUS_LABELS[statusValue]}${delay ? ` (${delay} ${delay === 1 ? "día" : "días"} de retraso)` : ""} · ${moneyFor(doc, total)}${pending ? ` · Pendiente ${moneyFor(doc, pending)}` : ""}${modified ? ` · Modificado ${modified}` : ""}</small></span><button class="secondary" data-load-history="${originalIndex}">Abrir</button><button class="secondary" data-reminder-history="${originalIndex}">Recordar</button><button class="danger-text" data-delete-history="${originalIndex}">Eliminar</button></div>`;
+        })
+        .join("")
+    : '<p class="history-empty">No hay documentos que coincidan.</p>';
+  $$("[data-load-history]").forEach(
+    (button) =>
+      (button.onclick = () => load(getHistory()[+button.dataset.loadHistory])),
+  );
+  $$("[data-delete-history]").forEach(
+    (button) =>
+      (button.onclick = () => {
+        const list = getHistory();
+        list.splice(+button.dataset.deleteHistory, 1);
+        setHistory(list);
+        renderHistory();
+      }),
+  );
+  $$("[data-reminder-history]").forEach(
+    (button) =>
+      (button.onclick = async () => {
+        const doc = getHistory()[+button.dataset.reminderHistory],
+          formal = confirm(
+            "Aceptar: requerimiento formal. Cancelar: recordatorio amistoso.",
+          );
+        const text = collectionText(doc, formal);
+        await navigator.clipboard.writeText(text);
+        alert("Texto copiado. Revísalo antes de enviarlo.");
+      }),
+  );
+}
+function saveToHistory(options = {}) {
+  const list = getHistory(),
+    doc = snapshot(),
+    existing = list.findIndex((x) => x.meta.id === doc.meta.id),
+    duplicate = list.find(
+      (x) =>
+        x.meta.id !== doc.meta.id &&
+        x.values.invoiceNumber === doc.values.invoiceNumber,
+    ),
+    firstIssue = !doc.meta.fingerprint;
+  if (
+    duplicate &&
+    !confirm(`Ya existe ${doc.values.invoiceNumber}. ¿Guardar de todos modos?`)
+  )
+    return false;
+  if (options.issue) {
+    doc.values.documentStatus = "issued";
+    $("#documentStatus").value = "issued";
+    doc.meta.fingerprint = hash(
+      JSON.stringify({ values: doc.values, items: doc.items }),
+    );
+    state.meta.fingerprint = doc.meta.fingerprint;
+  }
+  if (existing >= 0) list[existing] = doc;
+  else list.unshift(doc);
+  setHistory(list);
+  if (options.advanceNumber && $("#autoNumber").checked && firstIssue)
+    commitNumber(currentType());
+  renderHistory();
+  return true;
+}
+
+function backupAll() {
+  const data = {
+    product: "Haz la Factura",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    draft: snapshot(),
+    history: getHistory(),
+    sequences: Object.fromEntries(
+      Object.keys(localStorage)
+        .filter((key) => key.startsWith("hlf-sequence-"))
+        .map((key) => [key, localStorage.getItem(key)]),
+    ),
+  };
+  download(
+    `haz-la-factura-copia-${new Date().toISOString().slice(0, 10)}.json`,
+    JSON.stringify(data, null, 2),
+  );
+  localStorage.setItem("hlf-last-full-backup", String(Date.now()));
+  checkBackupReminder();
+}
+function restoreAll(data) {
+  if (data.product !== "Haz la Factura" || !Array.isArray(data.history))
+    throw new Error("No es una copia completa válida.");
+  const current = getHistory(),
+    byId = new Map(current.map((doc) => [doc.meta.id, doc])),
+    numbers = new Set(current.map((doc) => doc.values.invoiceNumber));
+  let skipped = 0;
+  data.history.map(migrate).forEach((doc) => {
+    if (!byId.has(doc.meta.id) && numbers.has(doc.values.invoiceNumber)) {
+      skipped++;
+      return;
+    }
+    byId.set(doc.meta.id, doc);
+    numbers.add(doc.values.invoiceNumber);
+  });
+  setHistory([...byId.values()]);
+  Object.entries(data.sequences || {}).forEach(([key, value]) => {
+    if (key.startsWith("hlf-sequence-")) localStorage.setItem(key, value);
+  });
+  if (
+    data.draft &&
+    confirm("¿También quieres abrir el borrador incluido en la copia?")
+  )
+    load(data.draft);
+  renderHistory();
+  alert(
+    `Archivo restaurado.${skipped ? ` Se omitieron ${skipped} documentos con numeración duplicada.` : ""}`,
+  );
+}
+function checkBackupReminder() {
+  $("#backupReminder").hidden =
+    Date.now() - (+localStorage.getItem("hlf-last-full-backup") || 0) <
+    30 * 864e5;
+}
+
+function validateDocument() {
+  const errors = [],
+    warnings = [],
+    type = currentType(),
+    totals = calculate(),
+    hist = getHistory();
+  if (!$("#issuerName").value.trim())
+    errors.push("Falta el nombre o razón social del emisor.");
+  if (!$("#issuerTax").value.trim())
+    errors.push("Falta la identificación fiscal del emisor.");
+  if (!$("#issuerAddress").value.trim())
+    errors.push("Falta la dirección del emisor.");
+  if (type !== "simplified") {
+    if (!$("#clientName").value.trim())
+      errors.push("Falta el nombre o razón social del cliente.");
+    if (!$("#clientTax").value.trim())
+      warnings.push("No se ha indicado la identificación fiscal del cliente.");
+    if (!$("#clientAddress").value.trim())
+      warnings.push("No se ha indicado la dirección del cliente.");
+  }
+  if (!$("#invoiceNumber").value.trim())
+    errors.push("Falta el número del documento.");
+  if (!$("#invoiceDate").value) errors.push("Falta la fecha de emisión.");
+  if (
+    $("#dueDate").value &&
+    $("#invoiceDate").value &&
+    $("#dueDate").value < $("#invoiceDate").value
+  )
+    warnings.push("La fecha de vencimiento es anterior a la emisión.");
+  state.items.forEach((item, i) => {
+    if (!item.description.trim())
+      errors.push(`El concepto ${i + 1} no tiene descripción.`);
+    if (item.quantity <= 0)
+      errors.push(`La cantidad del concepto ${i + 1} debe ser mayor que cero.`);
+    if (item.price < 0)
+      warnings.push(`El precio del concepto ${i + 1} es negativo.`);
+  });
+  if (totals.total < 0) warnings.push("El total del documento es negativo.");
+  if ($("#taxTreatment").value !== "standard" && !$("#taxMention").value.trim())
+    errors.push(
+      "El tratamiento fiscal elegido necesita una mención explicativa.",
+    );
+  if (
+    ["exempt", "not-subject", "reverse-charge", "intra-eu", "export"].includes(
+      $("#taxTreatment").value,
+    ) &&
+    state.items.some((item) => +item.vat !== 0)
+  )
+    warnings.push(
+      "Hay conceptos con IVA distinto de cero pese al tratamiento fiscal elegido.",
+    );
+  if (
+    type === "corrective" &&
+    (!$("#originalInvoiceNumber").value || !$("#correctionReason").value)
+  )
+    errors.push("La rectificativa necesita factura original y motivo.");
+  if (type === "simplified" && totals.total > 400)
+    warnings.push(
+      "Una factura simplificada por encima de 400 € solo está permitida en determinados supuestos y actividades.",
+    );
+  if (
+    hist.some(
+      (doc) =>
+        doc.meta.id !== state.meta.id &&
+        doc.values.invoiceNumber === $("#invoiceNumber").value,
+    )
+  )
+    warnings.push("Ese número ya existe en el historial local.");
+  if (
+    state.meta.fingerprint &&
+    state.meta.fingerprint !==
+      hash(JSON.stringify({ values: snapshot().values, items: state.items }))
+  )
+    warnings.push("El documento ha cambiado desde que se marcó como emitido.");
+  return { errors, warnings };
+}
+function requestPrint() {
+  const result = validateDocument();
+  $("#validationResults").innerHTML =
+    `${result.errors.length ? `<div class="validation-errors"><h3>Debes revisar</h3><ul>${result.errors.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>` : '<p class="validation-ok">No se han detectado campos obligatorios ausentes.</p>'}${result.warnings.length ? `<div class="validation-warnings"><h3>Advertencias</h3><ul>${result.warnings.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>` : ""}`;
+  $("#confirmPrintBtn").disabled = result.errors.length > 0;
+  $("#validationDialog").showModal();
+  if (!result.errors.length && !result.warnings.length) confirmPrint();
+}
+function confirmPrint() {
+  if (state.pro.active) saveToHistory({ issue: true, advanceNumber: true });
+  $("#validationDialog").close();
+  window.print();
+}
+
+function setTreatment(value, force = false) {
+  const mention = generatedTaxMention(value);
+  if (
+    force ||
+    !$("#taxMention").value.trim() ||
+    isGeneratedTaxMention($("#taxMention").value)
+  )
+    $("#taxMention").value = mention;
+  if (
+    ["exempt", "not-subject", "reverse-charge", "intra-eu", "export"].includes(
+      value,
+    )
+  ) {
+    $("#vat").value = 0;
+    state.items.forEach((item) => (item.vat = 0));
+    renderItems();
+  }
+  update();
+}
+function changeDocumentType(type) {
+  state.pro.documentType = type;
+  const prefix = PREFIXES[type];
+  $("#seriesPrefix").value = prefix;
+  $("#invoiceNumber").value = nextNumber(type);
+  $("#documentStatus").value = "draft";
+  update();
+}
+function convertEstimate() {
+  if (currentType() !== "estimate") return;
+  const estimateNumber = $("#invoiceNumber").value;
+  saveToHistory();
+  state.meta = {
+    id: uid(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    fingerprint: "",
+  };
+  changeDocumentType("invoice");
+  const invoiceNumber = $("#invoiceNumber").value;
+  $("#relatedDocument").value = estimateNumber;
+  $("#dueDate").value = new Date(Date.now() + 30 * 864e5)
+    .toISOString()
+    .slice(0, 10);
+  update();
+  const list = getHistory(),
+    savedEstimate = list.find(
+      (doc) => doc.values.invoiceNumber === estimateNumber,
+    );
+  if (savedEstimate) {
+    savedEstimate.values.relatedDocument = invoiceNumber;
+    savedEstimate.values.documentStatus = "accepted";
+    savedEstimate.meta.updatedAt = new Date().toISOString();
+    setHistory(list);
+    renderHistory();
+  }
+  alert(
+    `Presupuesto ${estimateNumber} conservado y convertido en una nueva factura.`,
+  );
+}
+function newDocument() {
+  if (
+    !confirm(
+      "¿Crear un documento nuevo? El documento actual seguirá en el archivo solo si lo has guardado.",
+    )
+  )
+    return;
+  const issuer = {
+    name: $("#issuerName").value,
+    tax: $("#issuerTax").value,
+    address: $("#issuerAddress").value,
+    country: $("#issuerCountry").value,
+    email: $("#issuerEmail").value,
+  };
+  state.meta = {
+    id: uid(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    fingerprint: "",
+  };
+  state.items = [newItem("", 1, 0)];
+  [
+    "clientName",
+    "clientTax",
+    "clientAddress",
+    "clientEmail",
+    "relatedDocument",
+    "originalInvoiceNumber",
+    "originalInvoiceDate",
+    "correctionReason",
+    "paymentDate",
+    "paymentMethod",
+  ].forEach((id) => ($("#" + id).value = ""));
+  $("#clientCountry").value = "España";
+  $("#amountPaid").value = 0;
+  $("#documentStatus").value = "draft";
+  $("#invoiceDate").value = new Date().toISOString().slice(0, 10);
+  $("#dueDate").value = new Date(Date.now() + 30 * 864e5)
+    .toISOString()
+    .slice(0, 10);
+  $("#invoiceNumber").value = nextNumber();
+  Object.entries(issuer).forEach(([key, value]) => {
+    const suffix = key[0].toUpperCase() + key.slice(1);
+    $("#issuer" + suffix).value = value;
+  });
+  renderItems();
+  update();
+}
+
+const today = new Date(),
+  due = new Date(Date.now() + 30 * 864e5);
+$("#invoiceDate").value = today.toISOString().slice(0, 10);
+$("#dueDate").value = due.toISOString().slice(0, 10);
+$("#invoiceNumber").value = nextNumber();
+VALUE_IDS.forEach((id) => {
+  if ($("#" + id)) $("#" + id).addEventListener("input", update);
+});
+$("#addItem").onclick = () => {
+  state.items.push(newItem());
+  renderItems();
+  update();
+};
+$("#printBtn").onclick = requestPrint;
+$("#confirmPrintBtn").onclick = confirmPrint;
+$("#exportBtn").onclick = () =>
+  download(
+    `${currentType() === "estimate" ? "presupuesto" : "factura"}-${$("#invoiceNumber").value}.json`,
+    JSON.stringify(snapshot(), null, 2),
+  );
+$("#importFile").onchange = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      load(JSON.parse(reader.result));
+    } catch {
+      alert("El archivo no es una copia válida de Haz la Factura.");
+    }
+  };
+  reader.readAsText(file);
+};
+$("#clearBtn").onclick = () => {
+  if (
+    confirm(
+      "¿Borrar el borrador guardado en este navegador? El archivo Pro no se borrará.",
+    )
+  ) {
+    localStorage.removeItem("hazlafactura");
+    localStorage.removeItem("facturalista");
+    location.reload();
+  }
+};
+$("#proAccessBtn").onclick = () =>
+  state.pro.active
+    ? $("#proControls").scrollIntoView({ behavior: "smooth" })
+    : $("#licenseDialog").showModal();
+$("#validateLicenseBtn").addEventListener("click", validateLicense);
+$("#releaseLicenseBtn").addEventListener("click", releaseLicense);
+$("#licenseDialog form").addEventListener("submit", (event) => {
+  if (event.submitter?.classList.contains("dialog-close")) return;
+  event.preventDefault();
+  validateLicense();
+});
+$("#documentType").onchange = (event) => changeDocumentType(event.target.value);
+$("#template").onchange = (event) => {
+  state.pro.template = event.target.value;
+  update();
+};
+$("#invoiceLanguage").onchange = (event) => {
+  const previousMention = $("#taxMention").value;
+  state.pro.invoiceLanguage = event.target.value;
+  if (isGeneratedTaxMention(previousMention))
+    $("#taxMention").value = generatedTaxMention($("#taxTreatment").value);
+  update();
+};
+$("#brandColor").oninput = (event) => {
+  state.pro.brandColor = event.target.value;
+  update();
+};
+$("#brandLogo").onchange = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 600000) {
+    alert("El logo debe ocupar menos de 600 KB.");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    state.pro.logo = reader.result;
+    update();
+  };
+  reader.readAsDataURL(file);
+};
+$("#saveDocumentBtn").onclick = () => {
+  saveToHistory();
+  renderHistory();
+};
+$("#newDocumentBtn").onclick = newDocument;
+$("#convertEstimateBtn").onclick = convertEstimate;
+$("#taxTreatment").onchange = (event) => setTreatment(event.target.value, true);
+$("#seriesPrefix").onchange = () => {
+  $("#invoiceNumber").value = nextNumber();
+  update();
+};
+["historySearch", "historyTypeFilter", "historyStatusFilter"].forEach((id) =>
+  $("#" + id).addEventListener("input", renderHistory),
+);
+$("#backupAllBtn").onclick = backupAll;
+$("#restoreAllFile").onchange = (event) => {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      restoreAll(JSON.parse(reader.result));
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+  if (event.target.files[0]) reader.readAsText(event.target.files[0]);
+};
+
+const stored =
+  localStorage.getItem("hazlafactura") || localStorage.getItem("facturalista");
+if (stored) {
+  try {
+    load(JSON.parse(stored), true);
+  } catch {
+    renderItems();
+    update();
+  }
+} else {
+  renderItems();
+  update();
+}
+restoreLicense();
