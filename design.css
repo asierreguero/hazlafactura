@@ -123,6 +123,8 @@ body {
 }
 .primary:hover,
 .pro-intro-action .license-activate:hover,
+.actions .secondary:hover,
+.actions .file-label:hover,
 .add:hover {
   transform: translateY(-1px);
   box-shadow: 0 8px 18px rgba(18, 37, 31, 0.16);
@@ -148,7 +150,18 @@ body {
   color: var(--ink);
 }
 .actions .danger-text {
-  border: 1px solid transparent;
+  border: 1px solid var(--danger);
+  background: #fff;
+  color: var(--danger);
+  transition:
+    background .16s ease,
+    color .16s ease,
+    transform .16s ease;
+}
+.actions .danger-text:hover {
+  background: var(--danger);
+  color: #fff;
+  transform: translateY(-1px);
 }
 .pro-tools {
   margin: 0 0 42px;
