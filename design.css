@@ -1254,6 +1254,15 @@ summary:focus-visible {
   display: flex;
   gap: 8px;
 }
+.history-head .backup-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 218px;
+  min-height: 38px;
+  margin: 0;
+  text-align: center;
+}
 .compact {
   padding: 8px 10px;
   font-size: 12px;
