@@ -252,10 +252,12 @@
 }
 .included {
   color: var(--green);
+  font-size: 0;
   font-weight: 800;
 }
 .included::before {
-  content: "✓ ";
+  content: "✓";
+  font-size: 16px;
 }
 .excluded {
   color: #c8c5bd;
