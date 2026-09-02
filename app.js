@@ -699,6 +699,8 @@ function setProActive(active) {
   $("#historyPanel").hidden = !active;
   if ($("#archiveDrawer")) $("#archiveDrawer").hidden = !active;
   if ($("#integratedProTools")) $("#integratedProTools").hidden = !active;
+  if ($("#workspaceTools")) $("#workspaceTools").hidden = !active;
+  document.querySelector(".pro-tools").hidden = !active;
   $("#documentToolbar").hidden = !active;
   $("#documentTypeControl").hidden = !active;
   $("#saveDocumentBtn").hidden = !active;
@@ -1380,6 +1382,7 @@ $("#proAccessBtn").onclick = () =>
   state.pro.active
     ? $("#proControls").scrollIntoView({ behavior: "smooth" })
     : $("#licenseDialog").showModal();
+$("#proIntroLicenseBtn").onclick = () => $("#licenseDialog").showModal();
 $("#validateLicenseBtn").addEventListener("click", validateLicense);
 $("#releaseLicenseBtn").addEventListener("click", releaseLicense);
 $("#licenseDialog form").addEventListener("submit", (event) => {
@@ -1491,6 +1494,7 @@ async function initializeApp() {
     const tools = document.createElement("div");
     tools.id = "workspaceTools";
     tools.className = "workspace-tools";
+    tools.hidden = true;
     tools.append(proCard, archiveDrawer);
     workspace.insertAdjacentElement("beforebegin", tools);
   }

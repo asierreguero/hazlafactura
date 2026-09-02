@@ -46,7 +46,7 @@
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="content.css" />
     <link rel="stylesheet" href="layout.css" />
-    <link rel="stylesheet" href="design.css?v=20260902-form-accordions" />
+    <link rel="stylesheet" href="design.css?v=20260902-license-and-hover" />
   </head>
   <body>
     <a class="skip-link" href="#main-content">Saltar al contenido</a>
@@ -111,6 +111,8 @@
             <span>pago único</span>
           </p>
           <a class="primary" href="pro.html">Descubrir Pro</a>
+          <span class="license-separator">o</span>
+          <button class="secondary license-activate" id="proIntroLicenseBtn" type="button">Activa tu licencia</button>
           <small>La versión gratuita seguirá disponible.</small>
         </div>
       </section>
@@ -129,7 +131,7 @@
             </label>
             <button class="toolbar-action" id="saveDocumentBtn" type="button" hidden>Guardar</button>
           </div>
-          <section class="pro-tools" aria-labelledby="pro-tools-title">
+          <section class="pro-tools" aria-labelledby="pro-tools-title" hidden>
             <div class="pro-tools-head">
               <div>
                 <small>PRO</small>
@@ -912,7 +914,7 @@
       </form>
     </dialog>
     <script src="translations.js?v=20260902-estimate-layout"></script>
-    <script src="app.js?v=20260902-unlimited-archive"></script>
+    <script src="app.js?v=20260902-license-and-hover"></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",

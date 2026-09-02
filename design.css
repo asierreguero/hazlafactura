@@ -163,6 +163,7 @@ body {
   border-top: 1px solid var(--line);
   background: var(--cream);
 }
+.workspace-tools[hidden] { display: none; }
 .workspace-tools > .pro-tools,
 .workspace-tools > .archive-drawer {
   width: 100%;
@@ -285,7 +286,15 @@ body {
 .form-accordion {
   margin: 0;
   border-top: 1px solid var(--line);
+  transition: background-color .18s ease, box-shadow .18s ease;
 }
+.form-accordion:not([open]):hover {
+  background: #f3f6f4;
+  box-shadow: inset 0 0 0 1px #13251f;
+}
+.form-accordion:not([open]):hover > summary,
+.form-accordion:not([open]):hover > summary::after { color: #13251f; }
+.form-accordion[open]:hover > summary .accordion-title { color: #1f644b; }
 .form-accordion:last-of-type { border-bottom: 1px solid var(--line); }
 .form-accordion > summary {
   display: flex;
@@ -698,6 +707,19 @@ select:focus {
   color: var(--ink);
   margin: 14px 0 10px;
 }
+.pro-intro-action .license-separator {
+  display: block;
+  margin: 2px 0;
+  color: #cbd9d2;
+  font-size: 12px;
+}
+.pro-intro-action .license-activate {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  background: #fff;
+  color: var(--ink);
+}
 .pro-intro-action small {
   font-size: 11px;
 }
@@ -821,6 +843,10 @@ summary:focus-visible {
   }
   .pro-intro-action .primary {
     display: inline-flex;
+  }
+  .pro-intro-action .license-activate {
+    display: inline-flex;
+    width: auto;
   }
   .pro-tools-head {
     align-items: flex-start;
