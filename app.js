@@ -1414,6 +1414,7 @@ function requestPrint() {
     `${result.errors.length ? `<div class="validation-errors"><h3>Debes revisar</h3><ul>${result.errors.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>` : '<p class="validation-ok">No se han detectado campos obligatorios ausentes.</p>'}${result.warnings.length ? `<div class="validation-warnings"><h3>Advertencias</h3><ul>${result.warnings.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>` : ""}`;
   $("#confirmPrintBtn").disabled = result.errors.length > 0;
   $("#printStatusField").hidden = !state.pro.active;
+  $("#saveDraftBtn").hidden = !state.pro.active;
   $("#printStatus").value = $("#documentStatus").value || "draft";
   $("#validationDialog").showModal();
   if (!state.pro.active && !result.errors.length && !result.warnings.length)
@@ -1433,13 +1434,10 @@ function confirmPrint() {
   window.print();
 }
 function saveIncompleteDraft() {
+  if (!state.pro.active) return;
   $("#documentStatus").value = "draft";
-  if (state.pro.active) {
-    if (saveToHistory() === false) return;
-    renderHistory();
-  } else {
-    saveDraft();
-  }
+  if (saveToHistory() === false) return;
+  renderHistory();
   $("#validationDialog").close();
 }
 
