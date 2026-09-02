@@ -285,9 +285,23 @@ body {
 }
 .form-section-heading h3 { margin: 6px 0 0; font: 24px Georgia, serif; }
 .form-accordion {
+  interpolate-size: allow-keywords;
   margin: 0;
   border-top: 1px solid var(--line);
-  transition: background-color .18s ease, box-shadow .18s ease;
+  transition: background-color .22s ease, box-shadow .22s ease;
+}
+.form-accordion::details-content {
+  block-size: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition:
+    block-size .28s ease,
+    opacity .2s ease,
+    content-visibility .28s allow-discrete;
+}
+.form-accordion[open]::details-content {
+  block-size: auto;
+  opacity: 1;
 }
 .form-accordion:not([open]):hover {
   background: #13251f;
@@ -305,18 +319,33 @@ body {
   padding: 20px 2px;
   cursor: pointer;
   list-style: none;
+  transition: color .2s ease;
 }
 .form-accordion > summary::-webkit-details-marker { display: none; }
 .form-accordion > summary::after {
   content: "+";
   color: var(--green);
   font-size: 22px;
+  line-height: 1;
+  transform: scale(1);
+  transform-origin: center;
+  transition: color .2s ease, transform .18s ease;
 }
+.form-accordion > summary:hover::after { transform: scale(1.24); }
 .form-accordion[open] > summary::after { content: "−"; }
 .form-accordion > summary .accordion-title { font: 24px Georgia, serif; }
+.form-accordion > summary .accordion-title { transition: color .2s ease; }
 .accordion-content { padding: 2px 0 26px; }
 .form-accordion .pro-controls { margin-top: 0; padding-top: 0; border-top: 0; }
 .form-accordion .pro-document-fields { border-color: var(--line); }
+@media (prefers-reduced-motion: reduce) {
+  .form-accordion,
+  .form-accordion::details-content,
+  .form-accordion > summary,
+  .form-accordion > summary::after,
+  .form-accordion > summary .accordion-title { transition: none; }
+  .form-accordion > summary:hover::after { transform: none; }
+}
 .integrated-pro-tools[hidden],
 .archive-drawer[hidden] { display: none; }
 .integrated-pro-tools { margin-bottom: 0; }
