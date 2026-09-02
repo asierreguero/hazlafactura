@@ -4,6 +4,11 @@ const LICENSE_API = "https://api.lemonsqueezy.com/v1/licenses";
 const TRANSLATIONS = window.HLF_TRANSLATIONS || {};
 const ESTIMATE_TRANSLATIONS = window.HLF_ESTIMATE_TRANSLATIONS || {};
 const RTL_LANGUAGES = new Set(["ar", "ur"]);
+const DB_NAME = "haz-la-factura";
+const DB_VERSION = 1;
+let historyCache = [];
+let databasePromise;
+let databaseAvailable = true;
 const VALUE_IDS = [
   "invoiceNumber",
   "invoiceDate",
@@ -139,6 +144,111 @@ const state = {
     fingerprint: "",
   },
 };
+
+function openDatabase() {
+  if (!databasePromise) {
+    databasePromise = new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = () => {
+        const database = request.result;
+        if (!database.objectStoreNames.contains("documents"))
+          database.createObjectStore("documents", { keyPath: "meta.id" });
+        if (!database.objectStoreNames.contains("assets"))
+          database.createObjectStore("assets", { keyPath: "key" });
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+      request.onblocked = () =>
+        reject(
+          new Error("La base de datos local está bloqueada por otra pestaña."),
+        );
+    });
+  }
+  return databasePromise;
+}
+async function idbGetAll(storeName) {
+  const database = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const request = database
+      .transaction(storeName, "readonly")
+      .objectStore(storeName)
+      .getAll();
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(request.error);
+  });
+}
+async function idbGet(storeName, key) {
+  const database = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const request = database
+      .transaction(storeName, "readonly")
+      .objectStore(storeName)
+      .get(key);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+async function idbPut(storeName, value) {
+  const database = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(storeName, "readwrite");
+    transaction.objectStore(storeName).put(value);
+    transaction.oncomplete = resolve;
+    transaction.onerror = () => reject(transaction.error);
+  });
+}
+async function replaceDocuments(documents) {
+  const database = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction("documents", "readwrite"),
+      store = transaction.objectStore("documents");
+    store.clear();
+    documents.forEach((document) => store.put(document));
+    transaction.oncomplete = resolve;
+    transaction.onerror = () => reject(transaction.error);
+  });
+}
+async function initializeLocalDatabase() {
+  await openDatabase();
+  let documents = await idbGetAll("documents");
+  const legacyHistory = localStorage.getItem("hlf-pro-history");
+  if (!documents.length && legacyHistory) {
+    try {
+      const migrated = JSON.parse(legacyHistory).map(migrate);
+      await replaceDocuments(migrated);
+      documents = await idbGetAll("documents");
+      if (documents.length === migrated.length)
+        localStorage.removeItem("hlf-pro-history");
+    } catch (error) {
+      console.warn("No se pudo migrar el historial anterior.", error);
+    }
+  }
+  const embeddedLogo = documents.find((document) => document.pro?.logo)?.pro
+    ?.logo;
+  if (embeddedLogo) {
+    await idbPut("assets", { key: "brand-logo", value: embeddedLogo });
+    documents.forEach((document) => {
+      if (document.pro) delete document.pro.logo;
+    });
+    await replaceDocuments(documents);
+  }
+  historyCache = documents
+    .map(migrate)
+    .sort((a, b) => new Date(b.meta.updatedAt) - new Date(a.meta.updatedAt));
+  const storedDraft = localStorage.getItem("hazlafactura");
+  if (storedDraft) {
+    try {
+      const draft = JSON.parse(storedDraft);
+      if (draft.pro?.logo) {
+        await idbPut("assets", { key: "brand-logo", value: draft.pro.logo });
+        delete draft.pro.logo;
+        localStorage.setItem("hazlafactura", JSON.stringify(draft));
+      }
+    } catch {}
+  }
+  const logo = await idbGet("assets", "brand-logo");
+  if (logo?.value) state.pro.logo = logo.value;
+}
 
 function uid() {
   return crypto.randomUUID
@@ -487,7 +597,7 @@ function update() {
   saveDraft();
 }
 
-function snapshot() {
+function snapshot(includeAssets = true) {
   const values = {};
   VALUE_IDS.forEach((id) => {
     if ($("#" + id)) values[id] = $("#" + id).value;
@@ -501,13 +611,13 @@ function snapshot() {
       template: state.pro.template,
       invoiceLanguage: state.pro.invoiceLanguage,
       brandColor: state.pro.brandColor,
-      logo: state.pro.logo,
+      ...(includeAssets && state.pro.logo ? { logo: state.pro.logo } : {}),
     },
     meta: { ...state.meta },
   };
 }
 function saveDraft() {
-  localStorage.setItem("hazlafactura", JSON.stringify(snapshot()));
+  localStorage.setItem("hazlafactura", JSON.stringify(snapshot(false)));
   $("#saveState").textContent = "Guardado localmente";
 }
 function migrate(data) {
@@ -546,7 +656,13 @@ function load(raw, migrateDraft = false) {
       "FAC-",
     );
   if (Array.isArray(data.items) && data.items.length) state.items = data.items;
-  if (data.pro) Object.assign(state.pro, data.pro);
+  if (data.pro) {
+    Object.assign(state.pro, data.pro);
+    if (data.pro.logo)
+      idbPut("assets", { key: "brand-logo", value: data.pro.logo }).catch(
+        console.error,
+      );
+  }
   state.meta = data.meta;
   syncProInputs();
   renderItems();
@@ -730,14 +846,22 @@ async function releaseLicense() {
 }
 
 function getHistory() {
-  try {
-    return JSON.parse(localStorage.getItem("hlf-pro-history")) || [];
-  } catch {
-    return [];
-  }
+  return historyCache;
 }
 function setHistory(list) {
-  localStorage.setItem("hlf-pro-history", JSON.stringify(list.slice(0, 100)));
+  historyCache = list
+    .slice(0, 100)
+    .sort((a, b) => new Date(b.meta.updatedAt) - new Date(a.meta.updatedAt));
+  if (!databaseAvailable) {
+    localStorage.setItem("hlf-pro-history", JSON.stringify(historyCache));
+    return Promise.resolve();
+  }
+  return replaceDocuments(historyCache).catch((error) => {
+    console.error("No se pudo guardar el archivo local.", error);
+    alert(
+      "No se ha podido guardar el archivo local. Exporta una copia antes de continuar.",
+    );
+  });
 }
 function effectiveStatus(doc) {
   const status = doc.values.documentStatus || "draft",
@@ -843,7 +967,7 @@ function renderHistory() {
 }
 function saveToHistory(options = {}) {
   const list = getHistory(),
-    doc = snapshot(),
+    doc = snapshot(false),
     existing = list.findIndex((x) => x.meta.id === doc.meta.id),
     duplicate = list.find(
       (x) =>
@@ -873,7 +997,66 @@ function saveToHistory(options = {}) {
   return true;
 }
 
-function backupAll() {
+function bytesToBase64(bytes) {
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += 32768)
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 32768));
+  return btoa(binary);
+}
+function base64ToBytes(value) {
+  const binary = atob(value),
+    bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+async function deriveBackupKey(password, salt, usage) {
+  const material = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveKey"],
+  );
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: 250000, hash: "SHA-256" },
+    material,
+    { name: "AES-GCM", length: 256 },
+    false,
+    [usage],
+  );
+}
+async function encryptBackup(data, password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16)),
+    iv = crypto.getRandomValues(new Uint8Array(12)),
+    key = await deriveBackupKey(password, salt, "encrypt"),
+    encrypted = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      key,
+      new TextEncoder().encode(JSON.stringify(data)),
+    );
+  return {
+    product: "Haz la Factura",
+    encrypted: true,
+    algorithm: "AES-GCM",
+    kdf: "PBKDF2-SHA256",
+    iterations: 250000,
+    salt: bytesToBase64(salt),
+    iv: bytesToBase64(iv),
+    data: bytesToBase64(new Uint8Array(encrypted)),
+  };
+}
+async function decryptBackup(envelope, password) {
+  const salt = base64ToBytes(envelope.salt),
+    iv = base64ToBytes(envelope.iv),
+    key = await deriveBackupKey(password, salt, "decrypt"),
+    decrypted = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv },
+      key,
+      base64ToBytes(envelope.data),
+    );
+  return JSON.parse(new TextDecoder().decode(decrypted));
+}
+async function backupAll() {
   const data = {
     product: "Haz la Factura",
     version: 1,
@@ -886,14 +1069,30 @@ function backupAll() {
         .map((key) => [key, localStorage.getItem(key)]),
     ),
   };
+  const password = prompt(
+    "Contraseña opcional para cifrar la copia. Déjala vacía para exportarla sin cifrar.",
+  );
+  if (password === null) return;
+  const encrypted = Boolean(password),
+    output = encrypted ? await encryptBackup(data, password) : data;
   download(
-    `haz-la-factura-copia-${new Date().toISOString().slice(0, 10)}.json`,
-    JSON.stringify(data, null, 2),
+    `haz-la-factura-copia-${new Date().toISOString().slice(0, 10)}${encrypted ? ".cifrada" : ""}.json`,
+    JSON.stringify(output, null, encrypted ? 0 : 2),
   );
   localStorage.setItem("hlf-last-full-backup", String(Date.now()));
   checkBackupReminder();
 }
-function restoreAll(data) {
+async function restoreAll(data) {
+  if (data.encrypted) {
+    const password = prompt("Introduce la contraseña de esta copia cifrada.");
+    if (!password)
+      throw new Error("La copia está cifrada y necesita su contraseña.");
+    try {
+      data = await decryptBackup(data, password);
+    } catch {
+      throw new Error("La contraseña no es correcta o la copia está dañada.");
+    }
+  }
   if (data.product !== "Haz la Factura" || !Array.isArray(data.history))
     throw new Error("No es una copia completa válida.");
   const current = getHistory(),
@@ -908,10 +1107,14 @@ function restoreAll(data) {
     byId.set(doc.meta.id, doc);
     numbers.add(doc.values.invoiceNumber);
   });
-  setHistory([...byId.values()]);
+  await setHistory([...byId.values()]);
   Object.entries(data.sequences || {}).forEach(([key, value]) => {
     if (key.startsWith("hlf-sequence-")) localStorage.setItem(key, value);
   });
+  if (data.draft?.pro?.logo) {
+    await idbPut("assets", { key: "brand-logo", value: data.draft.pro.logo });
+    state.pro.logo = data.draft.pro.logo;
+  }
   if (
     data.draft &&
     confirm("¿También quieres abrir el borrador incluido en la copia?")
@@ -926,6 +1129,32 @@ function checkBackupReminder() {
   $("#backupReminder").hidden =
     Date.now() - (+localStorage.getItem("hlf-last-full-backup") || 0) <
     30 * 864e5;
+}
+async function updateStorageStatus() {
+  if (!navigator.storage) return;
+  const estimate = await navigator.storage.estimate(),
+    persisted = navigator.storage.persisted
+      ? await navigator.storage.persisted()
+      : false,
+    used = estimate.usage || 0,
+    quota = estimate.quota || 0,
+    format = (bytes) =>
+      bytes < 1048576
+        ? `${Math.max(1, Math.round(bytes / 1024))} KB`
+        : `${(bytes / 1048576).toFixed(1)} MB`;
+  $("#storageStatus").textContent =
+    `${persisted ? "Almacenamiento persistente activo" : "Almacenamiento local estándar"} · ${format(used)} utilizados${quota ? ` de hasta ${format(quota)}` : ""}. Mantén siempre una copia externa.`;
+  $("#persistStorageBtn").hidden = persisted || !navigator.storage.persist;
+}
+async function requestPersistentStorage() {
+  if (!navigator.storage?.persist) return;
+  const granted = await navigator.storage.persist();
+  await updateStorageStatus();
+  alert(
+    granted
+      ? "El navegador ha marcado el archivo local como persistente. Aun así, conserva una copia externa."
+      : "El navegador no ha concedido almacenamiento persistente. Puedes seguir usando el archivo y exportar copias.",
+  );
 }
 
 function validateDocument() {
@@ -1205,8 +1434,13 @@ $("#brandLogo").onchange = (event) => {
     return;
   }
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
     state.pro.logo = reader.result;
+    try {
+      await idbPut("assets", { key: "brand-logo", value: reader.result });
+    } catch {
+      alert("No se ha podido guardar el logo en el almacenamiento local.");
+    }
     update();
   };
   reader.readAsDataURL(file);
@@ -1226,11 +1460,12 @@ $("#seriesPrefix").onchange = () => {
   $("#" + id).addEventListener("input", renderHistory),
 );
 $("#backupAllBtn").onclick = backupAll;
+$("#persistStorageBtn").onclick = requestPersistentStorage;
 $("#restoreAllFile").onchange = (event) => {
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
     try {
-      restoreAll(JSON.parse(reader.result));
+      await restoreAll(JSON.parse(reader.result));
     } catch (error) {
       alert(error.message);
     }
@@ -1238,17 +1473,37 @@ $("#restoreAllFile").onchange = (event) => {
   if (event.target.files[0]) reader.readAsText(event.target.files[0]);
 };
 
-const stored =
-  localStorage.getItem("hazlafactura") || localStorage.getItem("facturalista");
-if (stored) {
+async function initializeApp() {
   try {
-    load(JSON.parse(stored), true);
-  } catch {
+    await initializeLocalDatabase();
+  } catch (error) {
+    databaseAvailable = false;
+    try {
+      historyCache = JSON.parse(localStorage.getItem("hlf-pro-history")) || [];
+    } catch {
+      historyCache = [];
+    }
+    console.warn(
+      "IndexedDB no está disponible; se mantiene el almacenamiento anterior.",
+      error,
+    );
+  }
+  const stored =
+    localStorage.getItem("hazlafactura") ||
+    localStorage.getItem("facturalista");
+  if (stored) {
+    try {
+      load(JSON.parse(stored), true);
+    } catch {
+      renderItems();
+      update();
+    }
+  } else {
     renderItems();
     update();
   }
-} else {
-  renderItems();
-  update();
+  if (state.pro.logo) applyProAppearance();
+  await restoreLicense();
+  updateStorageStatus().catch(console.warn);
 }
-restoreLicense();
+initializeApp();

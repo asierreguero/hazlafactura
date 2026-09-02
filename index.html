@@ -46,7 +46,7 @@
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="content.css" />
     <link rel="stylesheet" href="layout.css" />
-    <link rel="stylesheet" href="design.css?v=20260902-document-suite" />
+    <link rel="stylesheet" href="design.css?v=20260902-indexeddb" />
   </head>
   <body>
     <a class="skip-link" href="#main-content">Saltar al contenido</a>
@@ -330,6 +330,13 @@
                 <div>
                   <button
                     class="secondary compact"
+                    id="persistStorageBtn"
+                    type="button"
+                  >
+                    Proteger almacenamiento
+                  </button>
+                  <button
+                    class="secondary compact"
                     id="backupAllBtn"
                     type="button"
                   >
@@ -366,8 +373,10 @@
                 </select>
               </div>
               <p class="backup-reminder" id="backupReminder" hidden>
-                Conviene exportar una copia completa de tu archivo local.
+                Conviene exportar una copia completa. Puedes protegerla con una
+                contraseña antes de guardarla fuera del navegador.
               </p>
+              <p class="storage-status" id="storageStatus"></p>
               <div id="historyList"></div>
             </div>
           </section>
@@ -697,10 +706,11 @@
         <details>
           <summary>¿Dónde se guardan los datos de mis facturas?</summary>
           <p>
-            En el almacenamiento local de tu navegador. Haz la Factura no tiene
-            una base de datos de clientes ni recibe el contenido de tus
-            facturas. Si borras los datos del navegador o cambias de
-            dispositivo, los documentos no aparecerán allí automáticamente.
+            En una base de datos IndexedDB dentro de tu navegador. El borrador y
+            algunas preferencias pequeñas usan almacenamiento local. Haz la
+            Factura no recibe el contenido de tus documentos. Si borras los
+            datos del sitio o pierdes el dispositivo, el archivo puede
+            desaparecer: conserva siempre una copia completa externa.
           </p>
         </details>
         <details>
@@ -737,9 +747,10 @@
           <summary>¿Necesito instalar algo o crear una cuenta?</summary>
           <p>
             No. Funciona directamente en el navegador y no requiere registro.
-            Para no perder información, puedes usar «Exportar copia» y guardar
-            el archivo en un lugar seguro; «Importar copia» permite recuperarlo
-            más adelante.
+            Puedes exportar cada documento o una copia completa del archivo. La
+            copia completa puede cifrarse con una contraseña antes de guardarla
+            en una nube, memoria USB u otro dispositivo; Haz la Factura no
+            conoce ni puede recuperar esa contraseña.
           </p>
         </details>
         <details>
@@ -885,7 +896,7 @@
       </form>
     </dialog>
     <script src="translations.js?v=20260902-estimate-layout"></script>
-    <script src="app.js?v=20260902-document-suite"></script>
+    <script src="app.js?v=20260902-indexeddb"></script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",

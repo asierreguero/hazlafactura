@@ -1054,6 +1054,11 @@ summary:focus-visible {
   color: #66531b;
   font-size: 13px;
 }
+.storage-status {
+  margin: 8px 0 14px;
+  color: var(--muted);
+  font-size: 12px;
+}
 .validation-dialog {
   width: min(620px, calc(100% - 32px));
   border: 0;
