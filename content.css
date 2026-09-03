@@ -217,8 +217,12 @@
   table-layout: fixed;
   border-collapse: collapse;
 }
-.comparison-table th:first-child { width: 56%; }
-.comparison-table th:not(:first-child) { width: 22%; }
+.comparison-table th:first-child {
+  width: 56%;
+}
+.comparison-table th:not(:first-child) {
+  width: 22%;
+}
 .comparison-table th,
 .comparison-table td {
   padding: 14px 18px;
@@ -244,7 +248,9 @@
   font-size: 14px;
   color: #47554f;
 }
-.comparison-table th:first-child { border-right: 1px solid #d5d0c6; }
+.comparison-table th:first-child {
+  border-right: 1px solid #d5d0c6;
+}
 .comparison-table .pro-column {
   background: #f0f7f2;
 }
@@ -337,7 +343,7 @@
 }
 main a:not(.primary):not(.secondary) {
   color: #1f644b;
-  transition: color .16s ease;
+  transition: color 0.16s ease;
 }
 main a:not(.primary):not(.secondary):hover,
 main a:not(.primary):not(.secondary):focus-visible {
@@ -381,6 +387,7 @@ main a:not(.primary):not(.secondary):focus-visible {
 .wiki-section .guide-grid {
   max-width: none;
   padding: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 .guide-card h3 {
   font:
@@ -394,6 +401,11 @@ main a:not(.primary):not(.secondary):focus-visible {
 }
 .wiki-hero {
   padding-bottom: 60px;
+}
+@media (max-width: 1050px) {
+  .wiki-section .guide-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 @media (max-width: 800px) {
   .wiki-directory {
@@ -410,6 +422,7 @@ main a:not(.primary):not(.secondary):focus-visible {
   }
   .wiki-section .guide-grid {
     gap: 14px;
+    grid-template-columns: 1fr;
   }
   .guide-card h3 {
     font-size: 24px;
